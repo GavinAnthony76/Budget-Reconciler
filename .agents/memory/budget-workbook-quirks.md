@@ -19,3 +19,7 @@ description: Non-obvious conventions and pitfalls in the KJA household budget wo
 Plan lines are scoped by a `month` label; new months get their plan via POST /plan/copy (guarded 404/409, serialized with a pg advisory xact lock). `/months` always appends the next cycle month so users can plan ahead. Startup migration backfilled un-monthed lines into every transaction month.
 **Why:** user wants to build next month's plan early, copy-forward unchanged items, and keep historical months showing the targets that applied then.
 **Gotcha:** orval codegen collides when an operation's request body is inline — name the schema in components (e.g. CopyPlanInput) instead.
+
+## Pay-cycle boundaries = USAA early deposit dates (not day-of-month)
+Budget months open on the USAA early end-of-month deposit date (table in api-server lib/budget.ts, e.g. Aug 2026 = Jul 29, Sep 2026 = Aug 28); the fixed monthStartDay rule is only a fallback outside the published 2026 schedule. Startup realigns all transaction months idempotently.
+**Why:** user is a military household — income lands on USAA early-pay dates, so cycles must follow the published schedule (2027 dates must be added when published).

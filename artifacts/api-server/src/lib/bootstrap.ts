@@ -12,6 +12,7 @@ import fs from "node:fs";
 import XlsxPopulate from "xlsx-populate";
 import { sql, eq } from "drizzle-orm";
 import { ensureManualMirror } from "./mirror";
+import { budgetMonth } from "./budget";
 import {
   db,
   settingsTable,
@@ -154,6 +155,36 @@ async function migratePlanLineMonths(): Promise<void> {
     await tx.execute(sql`DELETE FROM plan_lines WHERE month = ''`);
     logger.info({ unmonthedLines: n }, "migrated plan lines to per-month plans");
   });
+}
+
+/**
+ * Recompute every transaction's budget month with the current rules (USAA
+ * deposit-date cycle boundaries, falling back to monthStartDay). Idempotent:
+ * only rows whose label changed are updated.
+ */
+async function realignBudgetMonths(): Promise<void> {
+  const [s] = await db.select().from(settingsTable).limit(1);
+  if (!s) return;
+  const all = await db
+    .select({
+      id: transactionsTable.id,
+      date: transactionsTable.date,
+      month: transactionsTable.month,
+    })
+    .from(transactionsTable);
+  let changed = 0;
+  for (const t of all) {
+    const month = budgetMonth(t.date, s.monthStartDay);
+    if (month !== t.month) {
+      await db
+        .update(transactionsTable)
+        .set({ month })
+        .where(eq(transactionsTable.id, t.id));
+      changed++;
+    }
+  }
+  if (changed > 0)
+    logger.info({ changed }, "realigned transaction budget months to USAA pay cycle");
 }
 
 async function seedFromWorkbook(): Promise<void> {
@@ -425,6 +456,7 @@ export async function bootstrap(): Promise<void> {
   await ensureSchema();
   await seedFromWorkbook();
   await migratePlanLineMonths();
+  await realignBudgetMonths();
   await backfillMirrorLinks();
   await ensureMirrorsForBankExpenses();
 }

@@ -42,8 +42,43 @@ export function parseDateString(v: string): string {
   throw new Error(`Unparseable date: ${v}`);
 }
 
-/** Pay-cycle budget month: day >= startDay belongs to the NEXT month. */
+/**
+ * USAA early end-of-month deposit dates for 2026 (soonest funds are
+ * available). Each date is the first day of the NEXT budget month — e.g.
+ * the Jul 31 EOM pay arrives Jul 29, so "August 2026" runs Jul 29–Aug 27.
+ * Source: published 2026 USAA military pay deposit schedule.
+ */
+export const USAA_CYCLE_STARTS: ReadonlyArray<readonly [string, string]> = [
+  ["2026-01-28", "February 2026"],
+  ["2026-02-25", "March 2026"],
+  ["2026-03-30", "April 2026"],
+  ["2026-04-29", "May 2026"],
+  ["2026-05-27", "June 2026"],
+  ["2026-06-29", "July 2026"],
+  ["2026-07-29", "August 2026"],
+  ["2026-08-28", "September 2026"],
+  ["2026-09-29", "October 2026"],
+  ["2026-10-28", "November 2026"],
+  ["2026-11-27", "December 2026"],
+  ["2026-12-29", "January 2027"],
+];
+
+/**
+ * Pay-cycle budget month. Inside the published USAA schedule, a date belongs
+ * to the cycle opened by the most recent early EOM deposit date. Outside the
+ * schedule, falls back to the fixed rule: day >= startDay → NEXT month.
+ */
 export function budgetMonth(isoDate: string, startDay: number): string {
+  const first = USAA_CYCLE_STARTS[0][0];
+  const last = USAA_CYCLE_STARTS[USAA_CYCLE_STARTS.length - 1][0];
+  if (isoDate >= first && isoDate < nextCycleEndExclusive(last)) {
+    let label = "";
+    for (const [start, cycleLabel] of USAA_CYCLE_STARTS) {
+      if (isoDate >= start) label = cycleLabel;
+      else break;
+    }
+    if (label) return label;
+  }
   const [y, mo, d] = isoDate.split("-").map(Number);
   let year = y;
   let monthIdx = mo - 1;
@@ -55,6 +90,13 @@ export function budgetMonth(isoDate: string, startDay: number): string {
     }
   }
   return `${MONTHS[monthIdx]} ${year}`;
+}
+
+/** The last table entry covers roughly one month past its start date. */
+function nextCycleEndExclusive(lastStart: string): string {
+  const d = new Date(lastStart + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + 33);
+  return d.toISOString().slice(0, 10);
 }
 
 /** Next month label after e.g. "August 2026" → "September 2026". */
