@@ -225,13 +225,49 @@ router.post("/import", async (req, res): Promise<void> => {
   // from several bank accounts, and files from the same account often
   // overlap in date range. Dedupe only against rows from the SAME account —
   // identical-looking transactions on different accounts are both real.
-  const account = (parsed.data.account ?? "").trim() || "Checking";
+  //
+  // The account label is detected automatically: if the file shares rows
+  // with an existing account, it's another download from that account;
+  // otherwise it gets the next free "Account N" label. An explicit account
+  // in the request overrides detection (used by tests/scripts).
   const allBank = await db
     .select()
     .from(transactionsTable)
     .where(eq(transactionsTable.source, "bank"));
+  let account = (parsed.data.account ?? "").trim();
+  if (!account) {
+    const incomingKeys = new Set(
+      incoming.map((t) => fingerprintOf(t.date, t.desc, t.amount)),
+    );
+    const overlapByAccount = new Map<string, number>();
+    for (const t of allBank) {
+      const k = t.fingerprint ?? fingerprintOf(t.date, t.description, t.amount);
+      if (incomingKeys.has(k)) {
+        const a = (t.account ?? "").trim() || "Account 1";
+        overlapByAccount.set(a, (overlapByAccount.get(a) ?? 0) + 1);
+      }
+    }
+    let best = "";
+    let bestN = 0;
+    for (const [a, n] of overlapByAccount) {
+      if (n > bestN) {
+        best = a;
+        bestN = n;
+      }
+    }
+    if (best) {
+      account = best;
+    } else {
+      const labels = new Set(
+        allBank.map((t) => (t.account ?? "").trim()).filter(Boolean),
+      );
+      let n = 1;
+      while (labels.has(`Account ${n}`)) n++;
+      account = `Account ${n}`;
+    }
+  }
   const existingBank = allBank.filter(
-    (t) => (t.account ?? "Checking") === account,
+    (t) => ((t.account ?? "").trim() || "Account 1") === account,
   );
 
   const [batch] = await db
@@ -410,6 +446,7 @@ router.post("/import", async (req, res): Promise<void> => {
       autoCategorized,
       needsReview: needsReviewCount,
       importId: batch.id,
+      account,
     }),
   );
 });

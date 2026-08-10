@@ -416,6 +416,7 @@ export const ImportCsvBody = zod.object({
 })
 
 export const ImportCsvResponse = zod.object({
+  "account": zod.string().optional(),
   "totalRows": zod.number(),
   "added": zod.number(),
   "duplicates": zod.number(),

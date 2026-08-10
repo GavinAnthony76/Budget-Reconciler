@@ -732,6 +732,7 @@ components:
       type: object
       required: [totalRows, added, duplicates, pendingReplaced, autoCategorized, needsReview]
       properties:
+        account: { type: string }
         totalRows: { type: number }
         added: { type: number }
         duplicates: { type: number }

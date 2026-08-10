@@ -14,7 +14,6 @@ export default function ImportReview() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
-  const [account, setAccount] = useState("Checking");
 
   const importMutation = useImportCsv({
     mutation: {
@@ -25,7 +24,7 @@ export default function ImportReview() {
         queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
         toast({ 
           title: "Import Successful", 
-          description: `Added ${data.added} transactions. ${data.needsReview} need review.` 
+          description: `Added ${data.added} transactions${data.account ? ` to ${data.account}` : ""}. ${data.needsReview} need review.` 
         });
       },
       onError: (err: any) => {
@@ -43,7 +42,7 @@ export default function ImportReview() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      importMutation.mutate({ data: { csvContent: content, fileName: file.name, account: account.trim() || "Checking" } });
+      importMutation.mutate({ data: { csvContent: content, fileName: file.name } });
     };
     reader.readAsText(file);
   };
@@ -55,25 +54,16 @@ export default function ImportReview() {
         description="Upload bank statements and categorize new transactions"
       />
 
-      {/* Account picker: files may come from several bank accounts */}
-      <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4">
-        <div className="space-y-1 w-full sm:w-64">
-          <Label htmlFor="import-account" className="text-xs flex items-center gap-1.5">
-            <Landmark size={14} /> Importing for account
-          </Label>
-          <Input
-            id="import-account"
-            value={account}
-            onChange={(e) => setAccount(e.target.value)}
-            placeholder="e.g. Checking, USAA Savings"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground max-w-md pb-2">
-          Uploading files from more than one bank account? Set the account name
-          before each upload so overlapping files dedupe within the same account
-          without dropping identical transactions from a different account.
-        </p>
-      </div>
+      {/* Accounts are detected automatically per uploaded file */}
+      <p className="text-xs text-muted-foreground max-w-2xl flex items-start gap-1.5">
+        <Landmark size={14} className="mt-0.5 shrink-0" />
+        <span>
+          Upload as many files from as many bank accounts as you like — each
+          file is matched to its account automatically (Account 1, Account 2, …)
+          so overlapping downloads dedupe correctly and identical transactions
+          from different accounts are all kept. Totals combine all accounts.
+        </span>
+      </p>
 
       {/* Upload Zone */}
       <div 

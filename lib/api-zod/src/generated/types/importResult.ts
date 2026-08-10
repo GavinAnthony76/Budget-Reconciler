@@ -7,6 +7,7 @@
  */
 
 export interface ImportResult {
+  account?: string;
   totalRows: number;
   added: number;
   duplicates: number;
