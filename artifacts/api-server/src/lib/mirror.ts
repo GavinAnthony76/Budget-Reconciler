@@ -48,6 +48,8 @@ export async function ensureManualMirror(
     .filter(
       (m) =>
         m.linkedBankId == null &&
+        // only spending rows can mirror a bank expense — never link income
+        m.amount < 0 &&
         daysBetween(m.date, t.date) <= 4 &&
         // exact amount on the same day, or similar merchant within ±$0.25/±4d
         ((Math.abs(Math.abs(m.amount) - Math.abs(t.amount)) < 0.005 &&

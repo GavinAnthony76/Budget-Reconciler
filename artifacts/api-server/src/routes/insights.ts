@@ -81,7 +81,7 @@ router.get("/dashboard", async (req, res): Promise<void> => {
   // If no income sources were entered, fall back to the income actually
   // reflected in the imported/entered data so the dashboard stays meaningful.
   const incomePlanned =
-    plannedFromSources > 0 ? plannedFromSources : incomeActual;
+    incomes.length === 0 ? incomeActual : plannedFromSources;
 
   res.json(
     GetDashboardResponse.parse({
