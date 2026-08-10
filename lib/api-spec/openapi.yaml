@@ -700,6 +700,7 @@ components:
         month: { type: string }
         note: { type: ["string", "null"] }
         needsReview: { type: boolean }
+        linkedBankId: { type: ["number", "null"] }
     TransactionInput:
       type: object
       required: [date, description, amount]

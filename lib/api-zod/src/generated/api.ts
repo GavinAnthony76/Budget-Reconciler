@@ -315,7 +315,8 @@ export const ListTransactionsResponseItem = zod.object({
   "include": zod.boolean(),
   "month": zod.string(),
   "note": zod.string().nullish(),
-  "needsReview": zod.boolean()
+  "needsReview": zod.boolean(),
+  "linkedBankId": zod.number().nullish()
 })
 export const ListTransactionsResponse = zod.array(ListTransactionsResponseItem)
 
@@ -351,7 +352,8 @@ export const CreateTransactionResponse = zod.object({
   "include": zod.boolean(),
   "month": zod.string(),
   "note": zod.string().nullish(),
-  "needsReview": zod.boolean()
+  "needsReview": zod.boolean(),
+  "linkedBankId": zod.number().nullish()
 })
 
 
@@ -386,7 +388,8 @@ export const UpdateTransactionResponse = zod.object({
   "include": zod.boolean(),
   "month": zod.string(),
   "note": zod.string().nullish(),
-  "needsReview": zod.boolean()
+  "needsReview": zod.boolean(),
+  "linkedBankId": zod.number().nullish()
 })
 
 

@@ -157,6 +157,8 @@ export interface Transaction {
   /** @nullable */
   note?: string | null;
   needsReview: boolean;
+  /** @nullable */
+  linkedBankId?: number | null;
 }
 
 export interface TransactionInput {

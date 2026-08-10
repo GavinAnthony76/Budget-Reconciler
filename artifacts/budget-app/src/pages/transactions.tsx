@@ -40,11 +40,17 @@ export default function Transactions() {
     );
   }
 
-  const filteredData = transactions?.filter(t => 
-    t.description.toLowerCase().includes(search.toLowerCase()) || 
-    (t.originalDescription && t.originalDescription.toLowerCase().includes(search.toLowerCase())) ||
-    (t.category && t.category.toLowerCase().includes(search.toLowerCase()))
-  ) || [];
+  const filteredData = transactions?.filter(t => {
+    // In the combined view, imported purchases exist as a linked pair (bank
+    // row + ledger mirror). Show only one row per real transaction: hide the
+    // mirror — edits/deletes on the bank row propagate to it automatically.
+    if (filterType === "all" && t.source === "manual" && t.linkedBankId != null) return false;
+    return (
+      t.description.toLowerCase().includes(search.toLowerCase()) ||
+      (t.originalDescription && t.originalDescription.toLowerCase().includes(search.toLowerCase())) ||
+      (t.category && t.category.toLowerCase().includes(search.toLowerCase()))
+    );
+  }) || [];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -59,8 +65,8 @@ export default function Transactions() {
           {[
             { id: "all", label: "All" },
             { id: "review", label: "Needs Review" },
-            { id: "bank", label: "Bank" },
-            { id: "manual", label: "Manual" }
+            { id: "bank", label: "Bank Data" },
+            { id: "manual", label: "Ledger" }
           ].map(f => (
             <button
               key={f.id}
