@@ -19,55 +19,62 @@ export function formatDate(dateStr: string): string {
 
 export function PageHeader({ title, description, action }: { title: string, description?: string, action?: ReactNode }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-      <div>
-        <h1 className="text-3xl font-serif font-bold text-foreground tracking-tight">{title}</h1>
-        {description && <p className="text-muted-foreground mt-1 text-lg">{description}</p>}
+    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10 relative z-10">
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <h1 className="text-4xl md:text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/70 tracking-tight drop-shadow-sm">{title}</h1>
+        {description && <p className="text-white/60 mt-3 text-lg max-w-2xl font-medium">{description}</p>}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">{action}</div>}
     </div>
   );
 }
 
 export function EmptyState({ title, description, icon: Icon, action }: { title: string, description: string, icon: any, action?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border rounded-lg bg-card/50">
-      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground mb-4">
-        <Icon size={24} />
+    <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-2xl relative overflow-hidden group">
+      {/* Decorative gradient orb for empty state */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-primary/20 rounded-full blur-[50px] group-hover:bg-primary/30 transition-all duration-700 pointer-events-none" />
+      
+      <div className="h-16 w-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary mb-6 shadow-[0_0_20px_rgba(28,216,210,0.15)] relative z-10">
+        <Icon size={32} />
       </div>
-      <h3 className="text-lg font-serif font-semibold text-foreground mb-1">{title}</h3>
-      <p className="text-muted-foreground max-w-md mb-6">{description}</p>
-      {action}
+      <h3 className="text-xl font-display font-bold text-white mb-2 relative z-10">{title}</h3>
+      <p className="text-white/60 max-w-md mb-8 relative z-10">{description}</p>
+      <div className="relative z-10">{action}</div>
     </div>
   );
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-muted ${className}`} />;
+  return <div className={`animate-pulse rounded-xl bg-white/10 border border-white/5 ${className}`} />;
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function Card({ children, className = "", style }: { children: ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
-    <div className={`bg-card text-card-foreground border border-card-border rounded-lg shadow-sm ${className}`}>
-      {children}
+    <div className={`glass-card rounded-2xl relative overflow-hidden group ${className}`} style={style}>
+      {/* Interactive hover glow */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      <div className="relative z-10 h-full flex flex-col">
+        {children}
+      </div>
     </div>
   );
 }
 
 export function CardHeader({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`px-6 py-4 border-b border-card-border ${className}`}>{children}</div>;
+  return <div className={`px-6 py-5 border-b border-white/10 ${className}`}>{children}</div>;
 }
 
 export function CardTitle({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <h3 className={`font-serif text-xl font-semibold tracking-wide ${className}`}>{children}</h3>;
+  return <h3 className={`font-display text-xl font-bold tracking-wide text-white ${className}`}>{children}</h3>;
 }
 
 export function CardContent({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`p-6 ${className}`}>{children}</div>;
+  return <div className={`p-6 flex-1 ${className}`}>{children}</div>;
 }
 
 export function CardFooter({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`px-6 py-4 bg-muted/30 border-t border-card-border rounded-b-lg ${className}`}>{children}</div>;
+  return <div className={`px-6 py-4 bg-black/20 border-t border-white/10 mt-auto ${className}`}>{children}</div>;
 }
 
 export function Button({ 
@@ -80,21 +87,21 @@ export function Button({
   variant?: "primary" | "secondary" | "outline" | "ghost" | "destructive";
   size?: "sm" | "md" | "lg" | "icon";
 }) {
-  const baseClass = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none";
+  const baseClass = "inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
   
   const variants = {
-    primary: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    outline: "border border-input hover:bg-accent hover:text-accent-foreground",
-    ghost: "hover:bg-accent hover:text-accent-foreground",
-    destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
+    primary: "bg-gradient-to-r from-primary to-[#7000FF] hover:from-primary/90 hover:to-[#7000FF]/90 text-white shadow-[0_0_20px_rgba(28,216,210,0.3)] hover:shadow-[0_0_25px_rgba(28,216,210,0.5)] border border-white/10",
+    secondary: "bg-gradient-to-r from-secondary to-[#FF007F] hover:from-secondary/90 hover:to-[#FF007F]/90 text-white shadow-[0_0_20px_rgba(255,0,127,0.3)] hover:shadow-[0_0_25px_rgba(255,0,127,0.5)] border border-white/10",
+    outline: "bg-white/5 border border-white/20 text-white hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]",
+    ghost: "text-white/70 hover:text-white hover:bg-white/10",
+    destructive: "bg-destructive/20 text-destructive border border-destructive/30 hover:bg-destructive/30 hover:border-destructive/50 hover:shadow-[0_0_15px_rgba(255,50,50,0.3)]",
   };
   
   const sizes = {
-    sm: "h-8 px-3 text-xs",
-    md: "h-10 px-4 py-2",
-    lg: "h-12 px-8 text-lg",
-    icon: "h-10 w-10",
+    sm: "h-9 px-4 text-xs",
+    md: "h-11 px-5 py-2",
+    lg: "h-14 px-8 text-lg rounded-2xl",
+    icon: "h-11 w-11",
   };
   
   return (
@@ -110,7 +117,7 @@ export function Button({
 export function Input({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input 
-      className={`flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-sm text-white placeholder:text-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] ${className}`}
       {...props}
     />
   );
@@ -119,7 +126,7 @@ export function Input({ className = "", ...props }: React.InputHTMLAttributes<HT
 export function Label({ className = "", children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label 
-      className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}
+      className={`text-sm font-semibold text-white/80 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}
       {...props}
     >
       {children}
@@ -143,17 +150,22 @@ export function Select({
   disabled?: boolean;
 }) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={disabled}
-      className={`flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 appearance-none ${className}`}
-    >
-      <option value="" disabled>{placeholder}</option>
-      {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
+    <div className="relative w-full">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className={`flex h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 appearance-none transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] ${className}`}
+      >
+        <option value="" disabled className="bg-background text-white/50">{placeholder}</option>
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value} className="bg-background text-white">{opt.label}</option>
+        ))}
+      </select>
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/50">
+        ▼
+      </div>
+    </div>
   );
 }
 
@@ -166,15 +178,15 @@ export function Badge({
   variant?: "default" | "secondary" | "destructive" | "outline" | "success" | "warning";
   className?: string;
 }) {
-  const baseClass = "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring";
+  const baseClass = "inline-flex items-center rounded-full px-3 py-1 text-xs font-bold transition-colors uppercase tracking-wider font-mono";
   
   const variants = {
-    default: "border-transparent bg-primary text-primary-foreground",
-    secondary: "border-transparent bg-secondary text-secondary-foreground",
-    destructive: "border-transparent bg-destructive text-destructive-foreground",
-    outline: "text-foreground",
-    success: "border-transparent bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    warning: "border-transparent bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+    default: "bg-primary/20 text-primary border border-primary/30 shadow-[0_0_10px_rgba(28,216,210,0.2)]",
+    secondary: "bg-secondary/20 text-secondary border border-secondary/30 shadow-[0_0_10px_rgba(255,0,127,0.2)]",
+    destructive: "bg-destructive/20 text-destructive border border-destructive/30 shadow-[0_0_10px_rgba(255,50,50,0.2)]",
+    outline: "bg-white/5 text-white/80 border border-white/20",
+    success: "bg-chart-4/20 text-chart-4 border border-chart-4/30 shadow-[0_0_10px_rgba(0,255,100,0.2)]",
+    warning: "bg-chart-5/20 text-chart-5 border border-chart-5/30 shadow-[0_0_10px_rgba(255,200,0,0.2)]",
   };
   
   return (

@@ -35,16 +35,13 @@ export default function Transactions() {
   if (isLoading || !selectedMonth) {
     return (
       <div>
-        <PageHeader title="Transactions" description="Ledger entries" />
-        <Skeleton className="h-[600px] w-full" />
+        <PageHeader title="Ledger" description="All transactions for the cycle" />
+        <Skeleton className="h-[600px] w-full rounded-2xl" />
       </div>
     );
   }
 
   const filteredData = transactions?.filter(t => {
-    // In the combined view, imported purchases exist as a linked pair (bank
-    // row + ledger mirror). Show only one row per real transaction: hide the
-    // mirror — edits/deletes on the bank row propagate to it automatically.
     if (filterType === "all" && t.source === "manual" && t.linkedBankId != null) return false;
     return (
       t.description.toLowerCase().includes(search.toLowerCase()) ||
@@ -54,51 +51,53 @@ export default function Transactions() {
   }) || [];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6 animate-in fade-in duration-700">
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
         <PageHeader 
-          title="Transactions" 
-          description={`Ledger for ${selectedMonth}`}
+          title="Ledger" 
+          description={`Transaction history for ${selectedMonth}`}
         />
-        <Button onClick={() => setShowAdd((v) => !v)} data-testid="button-add-entry">
-          <Plus size={16} className="mr-1.5" /> Add Entry
+        <Button onClick={() => setShowAdd((v) => !v)} data-testid="button-add-entry" className="mb-8 relative z-10 w-full sm:w-auto">
+          <Plus size={18} className="mr-2" /> Add Entry
         </Button>
       </div>
 
       {showAdd && (
-        <AddEntryForm
-          categories={categories || []}
-          queryParams={queryParams}
-          onDone={() => setShowAdd(false)}
-        />
+        <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+          <AddEntryForm
+            categories={categories || []}
+            queryParams={queryParams}
+            onDone={() => setShowAdd(false)}
+          />
+        </div>
       )}
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex bg-muted/50 p-1 rounded-md overflow-x-auto">
+      <div className="flex flex-col md:flex-row justify-between gap-4 relative z-10">
+        <div className="flex bg-black/20 p-1.5 rounded-xl overflow-x-auto border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]">
           {[
             { id: "all", label: "All" },
             { id: "review", label: "Needs Review" },
             { id: "bank", label: "Bank Data" },
-            { id: "manual", label: "Ledger" }
+            { id: "manual", label: "Manual" }
           ].map(f => (
             <button
               key={f.id}
               onClick={() => setFilterType(f.id as any)}
-              className={`px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-colors ${
+              className={`px-5 py-2 text-sm font-bold rounded-lg whitespace-nowrap transition-all duration-300 font-display tracking-wide ${
                 filterType === f.id 
-                  ? "bg-background shadow-sm text-foreground" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                  ? "bg-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white border border-white/20" 
+                  : "text-white/50 hover:text-white hover:bg-white/5 border border-transparent"
               }`}
             >
               {f.label}
             </button>
           ))}
         </div>
-        <div className="relative w-full sm:w-64">
-          <Search size={16} className="absolute left-3 top-2.5 text-muted-foreground" />
+        <div className="relative w-full md:w-72">
+          <Search size={18} className="absolute left-4 top-3 text-white/40" />
           <Input 
-            className="pl-9" 
+            className="pl-11 h-12" 
             placeholder="Search transactions..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -106,7 +105,7 @@ export default function Transactions() {
         </div>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-visible z-10 relative mt-4">
         {filteredData.length === 0 ? (
           <EmptyState 
             icon={Receipt}
@@ -115,18 +114,18 @@ export default function Transactions() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-muted/30 text-muted-foreground text-xs uppercase">
+            <table className="w-full text-sm text-left whitespace-nowrap">
+              <thead className="bg-white/5 text-white/50 text-xs uppercase tracking-wider font-display border-b border-white/10">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium">Description</th>
-                  <th className="px-4 py-3 font-medium">Category</th>
-                  <th className="px-4 py-3 font-medium text-right">Amount</th>
-                  <th className="px-4 py-3 font-medium text-center">Status</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
+                  <th className="px-5 py-4 font-bold">Date</th>
+                  <th className="px-5 py-4 font-bold">Description</th>
+                  <th className="px-5 py-4 font-bold">Category</th>
+                  <th className="px-5 py-4 font-bold text-right">Amount</th>
+                  <th className="px-5 py-4 font-bold text-center">Status</th>
+                  <th className="px-5 py-4 font-bold text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-white/5">
                 {filteredData.map((txn) => (
                   editingId === txn.id ? (
                     <TransactionEditRow 
@@ -138,45 +137,45 @@ export default function Transactions() {
                       queryParams={queryParams}
                     />
                   ) : (
-                    <tr key={txn.id} className={`hover:bg-muted/10 transition-colors group ${!txn.include ? 'opacity-50 bg-muted/20' : ''}`}>
-                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                    <tr key={txn.id} className={`hover:bg-white/5 transition-colors group ${!txn.include ? 'opacity-40 grayscale-[50%]' : ''}`}>
+                      <td className="px-5 py-4 font-mono text-white/60">
                         {formatDate(txn.date)}
                       </td>
-                      <td className="px-4 py-3 max-w-[250px]">
-                        <div className="font-medium truncate">{txn.description}</div>
+                      <td className="px-5 py-4 max-w-[250px]">
+                        <div className="font-bold text-white truncate">{txn.description}</div>
                         {txn.source === "bank" && (
-                          <div className="text-xs text-muted-foreground truncate" title={txn.originalDescription || ""}>
+                          <div className="text-xs text-white/40 truncate font-mono mt-0.5" title={txn.originalDescription || ""}>
                             {txn.originalDescription}
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4">
                         {txn.needsReview ? (
-                          <div className="flex items-center text-amber-600 dark:text-amber-500 gap-1.5 text-xs font-medium">
+                          <div className="flex items-center text-chart-5 gap-1.5 text-xs font-bold bg-chart-5/10 w-fit px-2.5 py-1 rounded-full border border-chart-5/20 shadow-[0_0_10px_rgba(255,200,0,0.1)]">
                             <AlertCircle size={14} />
-                            Needs Review
+                            NEEDS REVIEW
                           </div>
                         ) : (
                           <div>
-                            <div className="font-medium">{txn.category || "-"}</div>
-                            <div className="text-xs text-muted-foreground">{txn.subcategory || "-"}</div>
+                            <div className="font-bold text-white/90">{txn.category || "-"}</div>
+                            <div className="text-xs text-white/50">{txn.subcategory || "-"}</div>
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono font-medium whitespace-nowrap">
-                        <span className={txn.amount < 0 ? "text-foreground" : "text-primary"}>
-                          {formatCurrency(txn.amount)}
+                      <td className="px-5 py-4 text-right font-mono font-bold">
+                        <span className={txn.amount < 0 ? "text-white" : "text-primary drop-shadow-[0_0_8px_rgba(28,216,210,0.5)]"}>
+                          {txn.amount > 0 ? "+" : ""}{formatCurrency(txn.amount)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <Badge variant={txn.status === "Posted" ? "outline" : "warning"} className="font-mono font-normal">
+                      <td className="px-5 py-4 text-center">
+                        <Badge variant={txn.status === "Posted" ? "outline" : "warning"}>
                           {txn.status}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => setEditingId(txn.id)}>
-                            <Edit2 size={14} />
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" className="h-9 w-9 text-white/50 hover:text-primary hover:bg-primary/20" onClick={() => setEditingId(txn.id)}>
+                            <Edit2 size={16} />
                           </Button>
                           <DeleteTxnButton id={txn.id} source={txn.source} queryParams={queryParams} />
                         </div>
@@ -232,7 +231,6 @@ function AddEntryForm({ categories, queryParams, onDone }: { categories: any[]; 
       data: {
         date,
         description: description.trim(),
-        // Income is stored positive; spending negative — same as the workbook
         amount: kind === "income" ? amt : -amt,
         category: kind === "income" ? "Income" : category || undefined,
         subcategory: (kind === "income" ? subcategory || "Other" : subcategory) || undefined,
@@ -243,17 +241,19 @@ function AddEntryForm({ categories, queryParams, onDone }: { categories: any[]; 
   };
 
   return (
-    <Card className="border-l-4 border-l-primary" data-testid="add-entry-form">
-      <div className="p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-serif text-lg font-semibold">New Manual Entry</h3>
-          <div className="flex bg-muted/50 p-1 rounded-md">
+    <Card className="border-t-4 border-t-primary mb-6" data-testid="add-entry-form">
+      <div className="p-6 sm:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h3 className="font-display text-xl font-bold text-white">New Manual Entry</h3>
+          <div className="flex bg-black/20 p-1.5 rounded-xl border border-white/10 self-start sm:self-auto">
             {(["expense", "income"] as const).map((k) => (
               <button
                 key={k}
                 onClick={() => { setKind(k); setSubcategory(""); }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${
-                  kind === k ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                className={`px-5 py-2 text-sm font-bold rounded-lg capitalize transition-all duration-300 font-display ${
+                  kind === k 
+                    ? k === "expense" ? "bg-destructive/20 text-destructive shadow-[0_0_10px_rgba(255,50,50,0.2)] border border-destructive/30" : "bg-primary/20 text-primary shadow-[0_0_10px_rgba(28,216,210,0.2)] border border-primary/30"
+                    : "text-white/50 hover:text-white border border-transparent"
                 }`}
                 data-testid={`toggle-${k}`}
               >
@@ -262,26 +262,26 @@ function AddEntryForm({ categories, queryParams, onDone }: { categories: any[]; 
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Date</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} data-testid="input-date" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="space-y-2">
+            <Label>Date</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} data-testid="input-date" className="font-mono text-white/80" />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Description</Label>
+          <div className="space-y-2">
+            <Label>Description</Label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={kind === "income" ? "e.g. Paycheck, Side gig" : "e.g. Farmers market"} data-testid="input-description" />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Amount ($)</Label>
-            <Input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" data-testid="input-amount" />
+          <div className="space-y-2">
+            <Label>Amount ($)</Label>
+            <Input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" data-testid="input-amount" className="font-mono text-lg font-bold" />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Account</Label>
+          <div className="space-y-2">
+            <Label>Account</Label>
             <Input value={account} onChange={(e) => setAccount(e.target.value)} placeholder="e.g. Cash, Checking" data-testid="input-account" />
           </div>
           {kind === "expense" && (
-            <div className="space-y-1">
-              <Label className="text-xs">Category</Label>
+            <div className="space-y-2">
+              <Label>Category</Label>
               <Select
                 value={category}
                 onChange={(val) => { setCategory(val); setSubcategory(""); }}
@@ -289,25 +289,25 @@ function AddEntryForm({ categories, queryParams, onDone }: { categories: any[]; 
               />
             </div>
           )}
-          <div className="space-y-1">
-            <Label className="text-xs">Subcategory</Label>
+          <div className="space-y-2">
+            <Label>Subcategory</Label>
             {subcategoryOptions.length > 0 ? (
               <Select value={subcategory} onChange={setSubcategory} options={subcategoryOptions} />
             ) : (
               <Input value={subcategory} onChange={(e) => setSubcategory(e.target.value)} placeholder="Custom..." />
             )}
           </div>
-          <div className="space-y-1 sm:col-span-2">
-            <Label className="text-xs">Note (optional)</Label>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Note (optional)</Label>
             <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note..." />
           </div>
         </div>
         {kind === "expense" && !category && (
-          <p className="text-xs text-amber-600 dark:text-amber-500">No category selected — the entry will go to the review queue so you can categorize it later.</p>
+          <p className="text-sm text-chart-5 font-bold bg-chart-5/10 p-3 rounded-lg border border-chart-5/20">No category selected — the entry will go to the review queue so you can categorize it later.</p>
         )}
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-3 pt-2">
           <Button variant="ghost" onClick={onDone}>Cancel</Button>
-          <Button onClick={handleSave} disabled={createMutation.isPending} data-testid="button-save-entry">
+          <Button onClick={handleSave} disabled={createMutation.isPending} data-testid="button-save-entry" className="w-full sm:w-auto">
             {createMutation.isPending ? "Saving..." : kind === "income" ? "Add Income" : "Add Expense"}
           </Button>
         </div>
@@ -355,37 +355,38 @@ function TransactionEditRow({ transaction, categories, onCancel, onComplete, que
   };
 
   return (
-    <tr className="bg-primary/5 ring-1 ring-primary/20 shadow-sm relative z-10">
-      <td className="px-4 py-4 font-mono text-muted-foreground align-top">
+    <tr className="bg-primary/10 border-y-2 border-primary/30 relative z-20 shadow-[0_0_30px_rgba(28,216,210,0.1)]">
+      <td className="px-5 py-5 font-mono text-white/60 align-top">
         {formatDate(transaction.date)}
       </td>
-      <td className="px-4 py-4 align-top">
-        <div className="font-medium">{transaction.description}</div>
-        <div className="text-xs text-muted-foreground mt-1">{formatCurrency(transaction.amount)}</div>
-        <div className="mt-3 flex items-center gap-2">
+      <td className="px-5 py-5 align-top">
+        <div className="font-bold text-white text-lg">{transaction.description}</div>
+        <div className="font-mono text-white/70 mt-1">{formatCurrency(transaction.amount)}</div>
+        <div className="mt-4 flex items-center gap-3 bg-black/20 w-fit px-3 py-1.5 rounded-lg border border-white/10">
           <input 
             type="checkbox" 
             id={`include-${transaction.id}`} 
             checked={include} 
             onChange={(e) => setInclude(e.target.checked)} 
-            className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+            className="rounded border-white/20 bg-black/40 text-primary focus:ring-primary focus:ring-offset-background h-5 w-5 appearance-none checked:bg-primary checked:border-primary transition-all relative
+            before:content-['✓'] before:absolute before:text-black before:text-xs before:font-bold before:left-[3px] before:top-[1px] before:opacity-0 checked:before:opacity-100"
           />
-          <Label htmlFor={`include-${transaction.id}`}>Include in Budget</Label>
+          <Label htmlFor={`include-${transaction.id}`} className="cursor-pointer">Include in Budget</Label>
         </div>
       </td>
-      <td colSpan={2} className="px-4 py-4 align-top">
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-xs mb-1 block">Category</Label>
+      <td colSpan={2} className="px-5 py-5 align-top">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Category</Label>
               <Select 
                 value={category} 
                 onChange={(val) => { setCategory(val); setSubcategory(""); }} 
                 options={categories.map((c: any) => ({ value: c.name, label: c.name }))} 
               />
             </div>
-            <div>
-              <Label className="text-xs mb-1 block">Subcategory</Label>
+            <div className="space-y-2">
+              <Label>Subcategory</Label>
               {subcategoryOptions.length > 0 ? (
                 <Select 
                   value={subcategory} 
@@ -405,25 +406,25 @@ function TransactionEditRow({ transaction, categories, onCancel, onComplete, que
             value={note} 
             onChange={e => setNote(e.target.value)} 
             placeholder="Add a note..." 
-            className="text-sm"
           />
         </div>
       </td>
-      <td colSpan={2} className="px-4 py-4 align-top text-right">
+      <td colSpan={2} className="px-5 py-5 align-top text-right">
         <div className="flex flex-col items-end gap-2 h-full justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10 mb-4">
             <input 
               type="checkbox" 
               id={`rule-${transaction.id}`} 
               checked={saveRule} 
               onChange={(e) => setSaveRule(e.target.checked)} 
-              className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+              className="rounded border-white/20 bg-black/40 text-primary focus:ring-primary focus:ring-offset-background h-5 w-5 appearance-none checked:bg-primary checked:border-primary transition-all relative
+              before:content-['✓'] before:absolute before:text-black before:text-xs before:font-bold before:left-[3px] before:top-[1px] before:opacity-0 checked:before:opacity-100"
             />
-            <Label htmlFor={`rule-${transaction.id}`} className="text-xs whitespace-nowrap">Save as Rule</Label>
+            <Label htmlFor={`rule-${transaction.id}`} className="cursor-pointer whitespace-nowrap">Save as Rule</Label>
           </div>
-          <div className="flex justify-end gap-2 mt-auto">
-            <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
-            <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending}>Save</Button>
+          <div className="flex justify-end gap-3 mt-auto">
+            <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+            <Button onClick={handleSave} disabled={updateMutation.isPending}>Save changes</Button>
           </div>
         </div>
       </td>
@@ -454,7 +455,7 @@ function DeleteTxnButton({ id, source, queryParams }: { id: number, source: stri
     <Button 
       variant="ghost" 
       size="icon" 
-      className="h-8 w-8 text-muted-foreground hover:text-destructive" 
+      className="h-9 w-9 text-white/50 hover:text-destructive hover:bg-destructive/20" 
       onClick={() => {
         if (
           confirm(
@@ -468,7 +469,7 @@ function DeleteTxnButton({ id, source, queryParams }: { id: number, source: stri
       }}
       disabled={deleteMutation.isPending}
     >
-      <Trash2 size={14} />
+      <Trash2 size={16} />
     </Button>
   );
 }
