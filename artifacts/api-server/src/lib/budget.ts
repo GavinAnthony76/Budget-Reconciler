@@ -57,6 +57,19 @@ export function budgetMonth(isoDate: string, startDay: number): string {
   return `${MONTHS[monthIdx]} ${year}`;
 }
 
+/** Next month label after e.g. "August 2026" → "September 2026". */
+export function nextMonthLabel(label: string): string {
+  const [name, yearStr] = label.split(" ");
+  let idx = MONTHS.indexOf(name);
+  let year = Number(yearStr) || 0;
+  idx += 1;
+  if (idx > 11) {
+    idx = 0;
+    year += 1;
+  }
+  return `${MONTHS[idx]} ${year}`;
+}
+
 /** Sortable key for "August 2026" style month labels. */
 export function monthSortKey(label: string): number {
   const [name, yearStr] = label.split(" ");

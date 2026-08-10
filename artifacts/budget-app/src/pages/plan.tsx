@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useGetSettings, useListPlanLines, useCreatePlanLine, useUpdatePlanLine, useDeletePlanLine, useListCategories, getListPlanLinesQueryKey } from "@workspace/api-client-react";
+import { useGetSettings, useListPlanLines, useCreatePlanLine, useUpdatePlanLine, useDeletePlanLine, useCopyPlan, useListMonths, useListCategories, getListPlanLinesQueryKey } from "@workspace/api-client-react";
 import { formatCurrency, PageHeader, EmptyState, Skeleton, Card, Button, Input, Select, Badge, Label } from "@/components/ui/core";
-import { Plus, Trash2, Edit2, Check, X, FileEdit } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, FileEdit, Copy } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,9 +10,37 @@ export default function BudgetPlan() {
   const selectedMonth = settings?.selectedMonth;
   const { data: categories } = useListCategories();
   
-  const { data: planLines, isLoading } = useListPlanLines({
-    query: {
-      queryKey: getListPlanLinesQueryKey()
+  const { data: months } = useListMonths();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { data: planLines, isLoading } = useListPlanLines(
+    selectedMonth ? { month: selectedMonth } : undefined,
+    {
+      query: {
+        queryKey: getListPlanLinesQueryKey(selectedMonth ? { month: selectedMonth } : undefined),
+        enabled: !!selectedMonth,
+      }
+    }
+  );
+
+  // The month right before the selected one that could serve as a copy source
+  // (months list is sorted newest-first).
+  const previousMonth = (() => {
+    if (!months || !selectedMonth) return undefined;
+    const idx = months.indexOf(selectedMonth);
+    return idx >= 0 && idx + 1 < months.length ? months[idx + 1] : undefined;
+  })();
+
+  const copyPlanMutation = useCopyPlan({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/plan"] });
+        toast({ title: "Plan copied", description: `Budget plan copied from ${previousMonth} to ${selectedMonth}. Adjust any items that change.` });
+      },
+      onError: (err: any) => {
+        toast({ title: "Copy failed", description: err?.message || "Could not copy the plan.", variant: "destructive" });
+      }
     }
   });
 
@@ -69,6 +97,7 @@ export default function BudgetPlan() {
             <div className="p-5 sm:p-6">
               <PlanLineForm 
                 categories={categories || []}
+                month={selectedMonth}
                 onCancel={() => setIsAdding(false)} 
                 onComplete={() => setIsAdding(false)}
               />
@@ -80,9 +109,27 @@ export default function BudgetPlan() {
       {Object.keys(groupedLines).length === 0 && !isAdding ? (
         <EmptyState 
           icon={FileEdit}
-          title="No budget lines planned"
-          description="Start planning your month by adding your first expense category."
-          action={<Button onClick={() => setIsAdding(true)}><Plus size={16} className="mr-2" /> Create First Line</Button>}
+          title={`No budget plan for ${selectedMonth || 'this month'} yet`}
+          description={previousMonth
+            ? `Bring over everything from ${previousMonth} in one click, then tweak only the items that change — or start from a blank plan.`
+            : "Start planning your month by adding your first expense category."}
+          action={
+            <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
+              {previousMonth && (
+                <Button
+                  onClick={() => copyPlanMutation.mutate({ data: { from: previousMonth, to: selectedMonth! } })}
+                  disabled={copyPlanMutation.isPending}
+                  data-testid="button-copy-plan"
+                >
+                  <Copy size={16} className="mr-2" />
+                  {copyPlanMutation.isPending ? "Copying..." : `Copy plan from ${previousMonth}`}
+                </Button>
+              )}
+              <Button variant={previousMonth ? "outline" : undefined} onClick={() => setIsAdding(true)}>
+                <Plus size={16} className="mr-2" /> {previousMonth ? "Start from blank" : "Create First Line"}
+              </Button>
+            </div>
+          }
         />
       ) : (
         <div className="space-y-8 relative z-10">
@@ -115,6 +162,7 @@ export default function BudgetPlan() {
                                 <PlanLineForm 
                                   initialData={line} 
                                   categories={categories || []}
+                                  month={selectedMonth}
                                   onCancel={() => setEditingId(null)}
                                   onComplete={() => setEditingId(null)}
                                 />
@@ -164,11 +212,13 @@ export default function BudgetPlan() {
 function PlanLineForm({ 
   initialData, 
   categories,
+  month,
   onCancel, 
   onComplete 
 }: { 
   initialData?: any, 
   categories: any[],
+  month?: string,
   onCancel: () => void, 
   onComplete: () => void 
 }) {
@@ -185,7 +235,7 @@ function PlanLineForm({
   const createMutation = useCreatePlanLine({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListPlanLinesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: ["/api/plan"] });
         toast({ title: "Line item added", description: "Budget plan updated." });
         onComplete();
       }
@@ -195,7 +245,7 @@ function PlanLineForm({
   const updateMutation = useUpdatePlanLine({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListPlanLinesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: ["/api/plan"] });
         toast({ title: "Line item updated", description: "Changes saved." });
         onComplete();
       }
@@ -210,6 +260,9 @@ function PlanLineForm({
     }
     
     const data = {
+      // Pin new lines to the month shown on screen, so a month switch in
+      // another tab can't land this line in the wrong plan.
+      ...(month ? { month } : {}),
       category,
       subcategory,
       planned: parseFloat(planned),
@@ -319,7 +372,7 @@ function DeleteLineButton({ id }: { id: number }) {
   const deleteMutation = useDeletePlanLine({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListPlanLinesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: ["/api/plan"] });
         toast({ title: "Deleted", description: "Plan line removed." });
       }
     }

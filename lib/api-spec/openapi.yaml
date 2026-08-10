@@ -235,7 +235,12 @@ paths:
     get:
       operationId: listPlanLines
       tags: [plan]
-      summary: List budget plan lines
+      summary: List budget plan lines for a month
+      parameters:
+        - name: month
+          in: query
+          required: false
+          schema: { type: string }
       responses:
         "200":
           description: Plan lines
@@ -262,6 +267,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PlanLine"
+  /plan/copy:
+    post:
+      operationId: copyPlan
+      tags: [plan]
+      summary: Copy all plan lines from one month to another
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CopyPlanInput"
+      responses:
+        "201":
+          description: Copied plan lines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlanLine"
+        "404":
+          description: Source month has no plan lines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "409":
+          description: Target month already has plan lines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
   /plan/{id}:
     patch:
       operationId: updatePlanLine
@@ -650,9 +687,10 @@ components:
         sortOrder: { type: number }
     PlanLine:
       type: object
-      required: [id, category, subcategory, planned]
+      required: [id, month, category, subcategory, planned]
       properties:
         id: { type: number }
+        month: { type: string }
         category: { type: string }
         subcategory: { type: string }
         planned: { type: number }
@@ -664,6 +702,7 @@ components:
       type: object
       required: [category, subcategory, planned]
       properties:
+        month: { type: string, minLength: 1 }
         category: { type: string, minLength: 1 }
         subcategory: { type: string, minLength: 1 }
         planned: { type: number }
@@ -671,6 +710,12 @@ components:
         fixedVariable: { type: ["string", "null"] }
         dueDay: { type: ["number", "null"] }
         notes: { type: ["string", "null"] }
+    CopyPlanInput:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string, minLength: 1 }
+        to: { type: string, minLength: 1 }
     PlanLineUpdate:
       type: object
       properties:

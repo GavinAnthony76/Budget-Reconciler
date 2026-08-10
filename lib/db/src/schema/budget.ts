@@ -36,6 +36,7 @@ export const categoriesTable = pgTable("categories", {
 
 export const planLinesTable = pgTable("plan_lines", {
   id: serial("id").primaryKey(),
+  month: text("month").notNull().default(""),
   category: text("category").notNull(),
   subcategory: text("subcategory").notNull(),
   planned: doublePrecision("planned").notNull().default(0),

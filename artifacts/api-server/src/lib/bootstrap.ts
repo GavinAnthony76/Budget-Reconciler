@@ -60,6 +60,7 @@ async function ensureSchema(): Promise<void> {
     );
     CREATE TABLE IF NOT EXISTS "plan_lines" (
       "id" serial PRIMARY KEY,
+      "month" text NOT NULL DEFAULT '',
       "category" text NOT NULL,
       "subcategory" text NOT NULL,
       "planned" double precision NOT NULL DEFAULT 0,
@@ -120,6 +121,41 @@ const num = (v: unknown): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
+/**
+ * One-time migration: plan lines created before per-month plans have
+ * month = ''. Duplicate them into every month that has transactions (plus
+ * the currently selected month) so historical views keep their targets,
+ * then remove the un-monthed originals.
+ */
+async function migratePlanLineMonths(): Promise<void> {
+  await db.execute(sql`
+    ALTER TABLE plan_lines ADD COLUMN IF NOT EXISTS "month" text NOT NULL DEFAULT ''
+  `);
+  // Atomic + serialized across replicas: advisory xact lock, re-check inside
+  // the transaction, and insert+delete commit (or roll back) together.
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('plan_lines_month_migration'))`);
+    const result = await tx.execute(sql`
+      SELECT count(*)::int AS n FROM plan_lines WHERE month = ''
+    `);
+    const n = Number((result.rows?.[0] as { n?: number } | undefined)?.n ?? 0);
+    if (n === 0) return;
+    await tx.execute(sql`
+      INSERT INTO plan_lines (month, category, subcategory, planned, priority, fixed_variable, due_day, notes)
+      SELECT m.month, p.category, p.subcategory, p.planned, p.priority, p.fixed_variable, p.due_day, p.notes
+      FROM plan_lines p
+      CROSS JOIN (
+        SELECT DISTINCT month FROM transactions
+        UNION
+        SELECT selected_month FROM settings
+      ) m
+      WHERE p.month = ''
+    `);
+    await tx.execute(sql`DELETE FROM plan_lines WHERE month = ''`);
+    logger.info({ unmonthedLines: n }, "migrated plan lines to per-month plans");
+  });
+}
+
 async function seedFromWorkbook(): Promise<void> {
   const [existing] = await db.select().from(settingsTable).limit(1);
   if (existing) return;
@@ -132,8 +168,9 @@ async function seedFromWorkbook(): Promise<void> {
   const rulesSheet = wb.sheet("Rules");
 
   const startDay = num(setup.cell("B9").value()) || 29;
+  const seedMonth = str(setup.cell("B4").value()) || "August 2026";
   await db.insert(settingsTable).values({
-    selectedMonth: str(setup.cell("B4").value()) || "August 2026",
+    selectedMonth: seedMonth,
     checkingBuffer: num(setup.cell("B5").value()),
     debtStrategy: str(setup.cell("B6").value()) || "Avalanche",
     monthStartDay: startDay,
@@ -163,6 +200,7 @@ async function seedFromWorkbook(): Promise<void> {
     if (!category || !subcategory) continue;
     const dueDayRaw = plan.cell(`I${r}`).value();
     await db.insert(planLinesTable).values({
+      month: seedMonth,
       category,
       subcategory,
       planned: num(plan.cell(`C${r}`).value()),
@@ -386,6 +424,7 @@ async function ensureMirrorsForBankExpenses(): Promise<void> {
 export async function bootstrap(): Promise<void> {
   await ensureSchema();
   await seedFromWorkbook();
+  await migratePlanLineMonths();
   await backfillMirrorLinks();
   await ensureMirrorsForBankExpenses();
 }

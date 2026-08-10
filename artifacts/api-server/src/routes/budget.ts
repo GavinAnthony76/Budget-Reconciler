@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import {
   db,
   settingsTable,
@@ -28,8 +28,10 @@ import {
   UpdateCategoryBody,
   UpdateCategoryResponse,
   DeleteCategoryParams,
+  ListPlanLinesQueryParams,
   ListPlanLinesResponse,
   CreatePlanLineBody,
+  CopyPlanBody,
   CreatePlanLineResponse,
   UpdatePlanLineParams,
   UpdatePlanLineBody,
@@ -42,6 +44,7 @@ import {
 } from "@workspace/api-zod";
 import {
   monthSortKey,
+  nextMonthLabel,
   applyRuleRetroactively,
   stripNulls,
   budgetMonth,
@@ -103,8 +106,15 @@ router.get("/months", async (_req, res): Promise<void> => {
     .selectDistinct({ month: transactionsTable.month })
     .from(transactionsTable);
   const s = await getOrCreateSettings();
+  const planRows = await db
+    .selectDistinct({ month: planLinesTable.month })
+    .from(planLinesTable);
   const set = new Set(rows.map((r) => r.month));
+  for (const r of planRows) if (r.month) set.add(r.month);
   set.add(s.selectedMonth);
+  // Always offer the next cycle so users can plan ahead before any data exists.
+  const latest = [...set].sort((a, b) => monthSortKey(b) - monthSortKey(a))[0];
+  if (latest) set.add(nextMonthLabel(latest));
   const months = [...set].sort((a, b) => monthSortKey(b) - monthSortKey(a));
   res.json(ListMonthsResponse.parse(months));
 });
@@ -231,11 +241,19 @@ router.delete("/categories/:id", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-// ---- Plan lines ----
-router.get("/plan", async (_req, res): Promise<void> => {
+// ---- Plan lines (per budget month) ----
+router.get("/plan", async (req, res): Promise<void> => {
+  const q = ListPlanLinesQueryParams.safeParse(req.query);
+  if (!q.success) {
+    res.status(400).json({ error: q.error.message });
+    return;
+  }
+  const s = await getOrCreateSettings();
+  const month = q.data.month ?? s.selectedMonth;
   const rows = await db
     .select()
     .from(planLinesTable)
+    .where(eq(planLinesTable.month, month))
     .orderBy(asc(planLinesTable.id));
   res.json(ListPlanLinesResponse.parse(rows));
 });
@@ -246,17 +264,65 @@ router.post("/plan", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const s = await getOrCreateSettings();
   const data = stripNulls(parsed.data, ["dueDay", "notes"]);
   const [row] = await db
     .insert(planLinesTable)
     .values({
       ...data,
+      month: parsed.data.month ?? s.selectedMonth,
       category: parsed.data.category,
       subcategory: parsed.data.subcategory,
       planned: parsed.data.planned,
     })
     .returning();
   res.status(201).json(CreatePlanLineResponse.parse(row));
+});
+
+router.post("/plan/copy", async (req, res): Promise<void> => {
+  const parsed = CopyPlanBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const { from, to } = parsed.data;
+  if (from === to) {
+    res.status(400).json({ error: "Source and target month are the same" });
+    return;
+  }
+  // Serialize per target month so two concurrent copies can't both pass the
+  // empty-target check: advisory xact lock + recheck inside the transaction.
+  const outcome = await db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${"plan_copy:" + to}))`,
+    );
+    const source = await tx
+      .select()
+      .from(planLinesTable)
+      .where(eq(planLinesTable.month, from))
+      .orderBy(asc(planLinesTable.id));
+    if (source.length === 0) {
+      return { status: 404 as const, error: `No plan lines found for ${from}` };
+    }
+    const existing = await tx
+      .select({ id: planLinesTable.id })
+      .from(planLinesTable)
+      .where(eq(planLinesTable.month, to))
+      .limit(1);
+    if (existing.length > 0) {
+      return { status: 409 as const, error: `${to} already has a budget plan` };
+    }
+    const rows = await tx
+      .insert(planLinesTable)
+      .values(source.map(({ id: _id, ...line }) => ({ ...line, month: to })))
+      .returning();
+    return { status: 201 as const, rows };
+  });
+  if (outcome.status !== 201) {
+    res.status(outcome.status).json({ error: outcome.error });
+    return;
+  }
+  res.status(201).json(ListPlanLinesResponse.parse(outcome.rows));
 });
 
 router.patch("/plan/:id", async (req, res): Promise<void> => {

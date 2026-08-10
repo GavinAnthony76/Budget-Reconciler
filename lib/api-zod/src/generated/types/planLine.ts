@@ -8,6 +8,7 @@
 
 export interface PlanLine {
   id: number;
+  month: string;
   category: string;
   subcategory: string;
   planned: number;

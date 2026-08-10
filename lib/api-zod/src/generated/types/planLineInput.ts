@@ -8,6 +8,8 @@
 
 export interface PlanLineInput {
   /** @minLength 1 */
+  month?: string;
+  /** @minLength 1 */
   category: string;
   /** @minLength 1 */
   subcategory: string;

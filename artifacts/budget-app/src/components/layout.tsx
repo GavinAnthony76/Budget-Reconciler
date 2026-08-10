@@ -29,6 +29,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
         queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
         queryClient.invalidateQueries({ queryKey: ["/api/reconciliation"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/plan"] });
       }
     }
   });

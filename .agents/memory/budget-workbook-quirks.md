@@ -14,3 +14,8 @@ description: Non-obvious conventions and pitfalls in the KJA household budget wo
 - The user's workbook failed to reconcile because pasted bank rows had no Manual Actuals counterparts (116 bank vs 44 manual) — the mirror invariant, again.
 
 **Account auto-detection (user decision):** users never name accounts. Each imported CSV is matched by fingerprint overlap to an existing account (most shared rows wins); zero overlap → next free "Account N" label. Per-account spending views were explicitly declined — only combined totals matter. An explicit `account` in the import request overrides detection (tests/scripts only).
+
+## Per-month budget plans (Aug 2026)
+Plan lines are scoped by a `month` label; new months get their plan via POST /plan/copy (guarded 404/409, serialized with a pg advisory xact lock). `/months` always appends the next cycle month so users can plan ahead. Startup migration backfilled un-monthed lines into every transaction month.
+**Why:** user wants to build next month's plan early, copy-forward unchanged items, and keep historical months showing the targets that applied then.
+**Gotcha:** orval codegen collides when an operation's request body is inline — name the schema in components (e.g. CopyPlanInput) instead.

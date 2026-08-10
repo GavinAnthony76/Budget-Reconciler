@@ -24,6 +24,7 @@ import type {
   Category,
   CategoryInput,
   CategoryUpdate,
+  CopyPlanInput,
   CsvImport,
   DashboardSummary,
   GetDashboardParams,
@@ -34,6 +35,7 @@ import type {
   IncomeSource,
   IncomeSourceInput,
   IncomeSourceUpdate,
+  ListPlanLinesParams,
   ListTransactionsParams,
   PlanLine,
   PlanLineInput,
@@ -959,20 +961,27 @@ export const useDeleteCategory = <TError = ErrorType<ApiMessage>,
       return useMutation(getDeleteCategoryMutationOptions(options));
     }
 
-export const getListPlanLinesUrl = () => {
+export const getListPlanLinesUrl = (params?: ListPlanLinesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/plan`
+  return stringifiedParams.length > 0 ? `/api/plan?${stringifiedParams}` : `/api/plan`
 }
 
 /**
- * @summary List budget plan lines
+ * @summary List budget plan lines for a month
  */
-export const listPlanLines = async ( options?: Parameters<typeof customFetch>[1]): Promise<PlanLine[]> => {
+export const listPlanLines = async (params?: ListPlanLinesParams, options?: Parameters<typeof customFetch>[1]): Promise<PlanLine[]> => {
 
-  return customFetch<PlanLine[]>(getListPlanLinesUrl(),
+  return customFetch<PlanLine[]>(getListPlanLinesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -985,23 +994,23 @@ export const listPlanLines = async ( options?: Parameters<typeof customFetch>[1]
 
 
 
-export const getListPlanLinesQueryKey = () => {
+export const getListPlanLinesQueryKey = (params?: ListPlanLinesParams,) => {
     return [
-    `/api/plan`
+    `/api/plan`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListPlanLinesQueryOptions = <TData = Awaited<ReturnType<typeof listPlanLines>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPlanLines>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListPlanLinesQueryOptions = <TData = Awaited<ReturnType<typeof listPlanLines>>, TError = ErrorType<unknown>>(params?: ListPlanLinesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPlanLines>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListPlanLinesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListPlanLinesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPlanLines>>> = ({ signal }) => listPlanLines({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPlanLines>>> = ({ signal }) => listPlanLines(params, { signal, ...requestOptions });
 
 
 
@@ -1015,15 +1024,15 @@ export type ListPlanLinesQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List budget plan lines
+ * @summary List budget plan lines for a month
  */
 
 export function useListPlanLines<TData = Awaited<ReturnType<typeof listPlanLines>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPlanLines>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListPlanLinesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPlanLines>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListPlanLinesQueryOptions(options)
+  const queryOptions = getListPlanLinesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -1105,6 +1114,77 @@ export const useCreatePlanLine = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreatePlanLineMutationOptions(options));
+    }
+
+export const getCopyPlanUrl = () => {
+
+
+
+
+  return `/api/plan/copy`
+}
+
+/**
+ * @summary Copy all plan lines from one month to another
+ */
+export const copyPlan = async (copyPlanInput: CopyPlanInput, options?: Parameters<typeof customFetch>[1]): Promise<PlanLine[]> => {
+
+  return customFetch<PlanLine[]>(getCopyPlanUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(copyPlanInput)
+  }
+);}
+
+
+
+
+
+export const getCopyPlanMutationOptions = <TError = ErrorType<ApiMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof copyPlan>>, TError,{data: BodyType<CopyPlanInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof copyPlan>>, TError,{data: BodyType<CopyPlanInput>}, TContext> => {
+
+const mutationKey = ['copyPlan'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof copyPlan>>, {data: BodyType<CopyPlanInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  copyPlan(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CopyPlanMutationResult = NonNullable<Awaited<ReturnType<typeof copyPlan>>>
+    export type CopyPlanMutationBody = BodyType<CopyPlanInput>
+    export type CopyPlanMutationError = ErrorType<ApiMessage>
+
+    /**
+ * @summary Copy all plan lines from one month to another
+ */
+export const useCopyPlan = <TError = ErrorType<ApiMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof copyPlan>>, TError,{data: BodyType<CopyPlanInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof copyPlan>>,
+        TError,
+        {data: BodyType<CopyPlanInput>},
+        TContext
+      > => {
+      return useMutation(getCopyPlanMutationOptions(options));
     }
 
 export const getUpdatePlanLineUrl = (id: number,) => {

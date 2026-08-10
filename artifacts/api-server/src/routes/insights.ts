@@ -28,7 +28,7 @@ router.get("/dashboard", async (req, res): Promise<void> => {
 
   const [txns, planLines, incomes] = await Promise.all([
     db.select().from(transactionsTable).where(eq(transactionsTable.month, month)),
-    db.select().from(planLinesTable),
+    db.select().from(planLinesTable).where(eq(planLinesTable.month, month)),
     db.select().from(incomeSourcesTable),
   ]);
 

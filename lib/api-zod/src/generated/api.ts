@@ -204,10 +204,15 @@ export const DeleteCategoryResponse = zod.void()
 
 
 /**
- * @summary List budget plan lines
+ * @summary List budget plan lines for a month
  */
+export const ListPlanLinesQueryParams = zod.object({
+  "month": zod.coerce.string().optional()
+})
+
 export const ListPlanLinesResponseItem = zod.object({
   "id": zod.number(),
+  "month": zod.string(),
   "category": zod.string(),
   "subcategory": zod.string(),
   "planned": zod.number(),
@@ -226,7 +231,9 @@ export const ListPlanLinesResponse = zod.array(ListPlanLinesResponseItem)
 
 
 
+
 export const CreatePlanLineBody = zod.object({
+  "month": zod.string().min(1).optional(),
   "category": zod.string().min(1),
   "subcategory": zod.string().min(1),
   "planned": zod.number(),
@@ -238,6 +245,7 @@ export const CreatePlanLineBody = zod.object({
 
 export const CreatePlanLineResponse = zod.object({
   "id": zod.number(),
+  "month": zod.string(),
   "category": zod.string(),
   "subcategory": zod.string(),
   "planned": zod.number(),
@@ -246,6 +254,32 @@ export const CreatePlanLineResponse = zod.object({
   "dueDay": zod.number().nullish(),
   "notes": zod.string().nullish()
 })
+
+
+/**
+ * @summary Copy all plan lines from one month to another
+ */
+
+
+
+
+export const CopyPlanBody = zod.object({
+  "from": zod.string().min(1),
+  "to": zod.string().min(1)
+})
+
+export const CopyPlanResponseItem = zod.object({
+  "id": zod.number(),
+  "month": zod.string(),
+  "category": zod.string(),
+  "subcategory": zod.string(),
+  "planned": zod.number(),
+  "priority": zod.string().nullish(),
+  "fixedVariable": zod.string().nullish(),
+  "dueDay": zod.number().nullish(),
+  "notes": zod.string().nullish()
+})
+export const CopyPlanResponse = zod.array(CopyPlanResponseItem)
 
 
 /**
@@ -271,6 +305,7 @@ export const UpdatePlanLineBody = zod.object({
 
 export const UpdatePlanLineResponse = zod.object({
   "id": zod.number(),
+  "month": zod.string(),
   "category": zod.string(),
   "subcategory": zod.string(),
   "planned": zod.number(),

@@ -90,6 +90,7 @@ export interface CategoryUpdate {
 
 export interface PlanLine {
   id: number;
+  month: string;
   category: string;
   subcategory: string;
   planned: number;
@@ -105,6 +106,8 @@ export interface PlanLine {
 
 export interface PlanLineInput {
   /** @minLength 1 */
+  month?: string;
+  /** @minLength 1 */
   category: string;
   /** @minLength 1 */
   subcategory: string;
@@ -117,6 +120,13 @@ export interface PlanLineInput {
   dueDay?: number | null;
   /** @nullable */
   notes?: string | null;
+}
+
+export interface CopyPlanInput {
+  /** @minLength 1 */
+  from: string;
+  /** @minLength 1 */
+  to: string;
 }
 
 export interface PlanLineUpdate {
@@ -263,6 +273,10 @@ export interface ReconciliationRow {
   difference: number;
   status: string;
 }
+
+export type ListPlanLinesParams = {
+month?: string;
+};
 
 export type ListTransactionsParams = {
 month?: string;

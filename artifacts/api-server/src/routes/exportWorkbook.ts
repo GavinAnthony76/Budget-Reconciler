@@ -29,9 +29,14 @@ function serialFromIso(iso: string): number {
 
 router.get("/export", async (req, res): Promise<void> => {
   const [settingsRow] = await db.select().from(settingsTable).limit(1);
+  const exportMonth = settingsRow?.selectedMonth ?? "";
   const [incomes, planLines, rules, txns] = await Promise.all([
     db.select().from(incomeSourcesTable).orderBy(asc(incomeSourcesTable.id)),
-    db.select().from(planLinesTable).orderBy(asc(planLinesTable.id)),
+    db
+      .select()
+      .from(planLinesTable)
+      .where(eq(planLinesTable.month, exportMonth))
+      .orderBy(asc(planLinesTable.id)),
     db
       .select()
       .from(rulesTable)
