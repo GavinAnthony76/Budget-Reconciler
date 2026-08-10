@@ -32,14 +32,21 @@ router.get("/dashboard", async (req, res): Promise<void> => {
     db.select().from(incomeSourcesTable),
   ]);
 
-  const incomePlanned = incomes.reduce((s, i) => s + i.monthlyEquivalent, 0);
+  const plannedFromSources = incomes.reduce(
+    (s, i) => s + i.monthlyEquivalent,
+    0,
+  );
+  // Income counts from bank rows AND manually entered income (e.g. cash,
+  // side gigs). Manual rows linked to a bank row are mirrors — skip them so
+  // nothing is double-counted.
   const incomeActual = txns
     .filter(
       (t) =>
-        t.source === "bank" &&
         norm(t.status) === "POSTED" &&
         t.category === "Income" &&
-        t.amount > 0,
+        t.amount > 0 &&
+        (t.source === "bank" ||
+          (t.source === "manual" && t.linkedBankId == null)),
     )
     .reduce((s, t) => s + t.amount, 0);
 
@@ -70,6 +77,11 @@ router.get("/dashboard", async (req, res): Promise<void> => {
   const plannedExpenses = planLines.reduce((s, p) => s + p.planned, 0);
   const reviewCount = txns.filter((t) => t.needsReview).length;
   const pendingCount = txns.filter((t) => norm(t.status) === "PENDING").length;
+
+  // If no income sources were entered, fall back to the income actually
+  // reflected in the imported/entered data so the dashboard stays meaningful.
+  const incomePlanned =
+    plannedFromSources > 0 ? plannedFromSources : incomeActual;
 
   res.json(
     GetDashboardResponse.parse({

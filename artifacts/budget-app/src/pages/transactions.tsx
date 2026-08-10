@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
-import { useGetSettings, useListTransactions, useUpdateTransaction, useDeleteTransaction, useListCategories, getListTransactionsQueryKey, ListTransactionsSource } from "@workspace/api-client-react";
+import { useGetSettings, useListTransactions, useUpdateTransaction, useDeleteTransaction, useCreateTransaction, useListCategories, getListTransactionsQueryKey, ListTransactionsSource } from "@workspace/api-client-react";
 import { formatCurrency, formatDate, PageHeader, Skeleton, EmptyState, Card, Button, Input, Select, Badge, Label } from "@/components/ui/core";
-import { Search, Filter, Edit2, Trash2, Receipt, AlertCircle, Check } from "lucide-react";
+import { Search, Filter, Edit2, Trash2, Receipt, AlertCircle, Check, Plus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,6 +30,7 @@ export default function Transactions() {
 
   const { data: categories } = useListCategories();
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
 
   if (isLoading || !selectedMonth) {
     return (
@@ -54,10 +55,23 @@ export default function Transactions() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <PageHeader 
-        title="Transactions" 
-        description={`Ledger for ${selectedMonth}`}
-      />
+      <div className="flex items-start justify-between gap-4">
+        <PageHeader 
+          title="Transactions" 
+          description={`Ledger for ${selectedMonth}`}
+        />
+        <Button onClick={() => setShowAdd((v) => !v)} data-testid="button-add-entry">
+          <Plus size={16} className="mr-1.5" /> Add Entry
+        </Button>
+      </div>
+
+      {showAdd && (
+        <AddEntryForm
+          categories={categories || []}
+          queryParams={queryParams}
+          onDone={() => setShowAdd(false)}
+        />
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -176,6 +190,129 @@ export default function Transactions() {
         )}
       </Card>
     </div>
+  );
+}
+
+function AddEntryForm({ categories, queryParams, onDone }: { categories: any[]; queryParams: any; onDone: () => void }) {
+  const [kind, setKind] = useState<"expense" | "income">("expense");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("");
+  const [subcategory, setSubcategory] = useState("");
+  const [account, setAccount] = useState("Cash");
+  const [note, setNote] = useState("");
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const createMutation = useCreateTransaction({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        toast({ title: "Entry added", description: "Your transaction was saved to the ledger." });
+        onDone();
+      },
+      onError: (err: any) => {
+        toast({ title: "Could not save", description: err.message || "Check the fields and try again.", variant: "destructive" });
+      },
+    },
+  });
+
+  const selectedCategoryObj = categories.find((c: any) => c.name === (kind === "income" ? "Income" : category));
+  const subcategoryOptions = selectedCategoryObj?.subcategories.map((s: string) => ({ value: s, label: s })) || [];
+
+  const handleSave = () => {
+    const amt = Math.abs(parseFloat(amount));
+    if (!description.trim() || !Number.isFinite(amt) || amt === 0 || !date) {
+      toast({ title: "Missing fields", description: "Enter a date, description, and a non-zero amount.", variant: "destructive" });
+      return;
+    }
+    createMutation.mutate({
+      data: {
+        date,
+        description: description.trim(),
+        // Income is stored positive; spending negative — same as the workbook
+        amount: kind === "income" ? amt : -amt,
+        category: kind === "income" ? "Income" : category || undefined,
+        subcategory: (kind === "income" ? subcategory || "Other" : subcategory) || undefined,
+        account: account.trim() || "Cash",
+        note: note.trim() || undefined,
+      },
+    });
+  };
+
+  return (
+    <Card className="border-l-4 border-l-primary" data-testid="add-entry-form">
+      <div className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-serif text-lg font-semibold">New Manual Entry</h3>
+          <div className="flex bg-muted/50 p-1 rounded-md">
+            {(["expense", "income"] as const).map((k) => (
+              <button
+                key={k}
+                onClick={() => { setKind(k); setSubcategory(""); }}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${
+                  kind === k ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-testid={`toggle-${k}`}
+              >
+                {k}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Date</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} data-testid="input-date" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Description</Label>
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={kind === "income" ? "e.g. Paycheck, Side gig" : "e.g. Farmers market"} data-testid="input-description" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Amount ($)</Label>
+            <Input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" data-testid="input-amount" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Account</Label>
+            <Input value={account} onChange={(e) => setAccount(e.target.value)} placeholder="e.g. Cash, Checking" data-testid="input-account" />
+          </div>
+          {kind === "expense" && (
+            <div className="space-y-1">
+              <Label className="text-xs">Category</Label>
+              <Select
+                value={category}
+                onChange={(val) => { setCategory(val); setSubcategory(""); }}
+                options={categories.filter((c: any) => c.name !== "Income").map((c: any) => ({ value: c.name, label: c.name }))}
+              />
+            </div>
+          )}
+          <div className="space-y-1">
+            <Label className="text-xs">Subcategory</Label>
+            {subcategoryOptions.length > 0 ? (
+              <Select value={subcategory} onChange={setSubcategory} options={subcategoryOptions} />
+            ) : (
+              <Input value={subcategory} onChange={(e) => setSubcategory(e.target.value)} placeholder="Custom..." />
+            )}
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-xs">Note (optional)</Label>
+            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note..." />
+          </div>
+        </div>
+        {kind === "expense" && !category && (
+          <p className="text-xs text-amber-600 dark:text-amber-500">No category selected — the entry will go to the review queue so you can categorize it later.</p>
+        )}
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onDone}>Cancel</Button>
+          <Button onClick={handleSave} disabled={createMutation.isPending} data-testid="button-save-entry">
+            {createMutation.isPending ? "Saving..." : kind === "income" ? "Add Income" : "Add Expense"}
+          </Button>
+        </div>
+      </div>
+    </Card>
   );
 }
 
