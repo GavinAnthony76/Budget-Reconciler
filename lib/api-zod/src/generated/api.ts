@@ -408,7 +408,8 @@ export const DeleteTransactionResponse = zod.void()
 
 export const ImportCsvBody = zod.object({
   "csvContent": zod.string().min(1),
-  "fileName": zod.string().nullish()
+  "fileName": zod.string().nullish(),
+  "account": zod.string().nullish()
 })
 
 export const ImportCsvResponse = zod.object({
@@ -417,8 +418,35 @@ export const ImportCsvResponse = zod.object({
   "duplicates": zod.number(),
   "pendingReplaced": zod.number(),
   "autoCategorized": zod.number(),
-  "needsReview": zod.number()
+  "needsReview": zod.number(),
+  "importId": zod.number().optional()
 })
+
+
+/**
+ * @summary List past CSV imports (file, account, counts, months covered)
+ */
+export const ListImportsResponseItem = zod.object({
+  "id": zod.number(),
+  "fileName": zod.string().nullable(),
+  "account": zod.string(),
+  "totalRows": zod.number(),
+  "added": zod.number(),
+  "duplicates": zod.number(),
+  "importedAt": zod.string(),
+  "months": zod.array(zod.string())
+})
+export const ListImportsResponse = zod.array(ListImportsResponseItem)
+
+
+/**
+ * @summary Delete an import record (only when none of its transactions remain)
+ */
+export const DeleteImportParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteImportResponse = zod.void()
 
 
 /**

@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { and, asc, desc, eq } from "drizzle-orm";
 import Papa from "papaparse";
-import { db, transactionsTable, rulesTable } from "@workspace/db";
+import { db, transactionsTable, rulesTable, importsTable } from "@workspace/db";
 import {
   ListTransactionsQueryParams,
   ListTransactionsResponse,
@@ -13,6 +13,7 @@ import {
   DeleteTransactionParams,
   ImportCsvBody,
   ImportCsvResponse,
+  ListImportsResponse,
 } from "@workspace/api-zod";
 import {
   budgetMonth,
@@ -26,6 +27,7 @@ import {
   applyRuleRetroactively,
 } from "../lib/budget";
 import { getOrCreateSettings } from "./budget";
+import { ensureManualMirror } from "../lib/mirror";
 
 const router: IRouter = Router();
 
@@ -219,10 +221,27 @@ router.post("/import", async (req, res): Promise<void> => {
     return;
   }
 
-  const existingBank = await db
+  // Each import is tied to an account: users may upload several CSV files
+  // from several bank accounts, and files from the same account often
+  // overlap in date range. Dedupe only against rows from the SAME account —
+  // identical-looking transactions on different accounts are both real.
+  const account = (parsed.data.account ?? "").trim() || "Checking";
+  const allBank = await db
     .select()
     .from(transactionsTable)
     .where(eq(transactionsTable.source, "bank"));
+  const existingBank = allBank.filter(
+    (t) => (t.account ?? "Checking") === account,
+  );
+
+  const [batch] = await db
+    .insert(importsTable)
+    .values({
+      fileName: parsed.data.fileName ?? null,
+      account,
+      totalRows: 0,
+    })
+    .returning();
 
   // Dedupe with multiplicity on fingerprint
   const counts = new Map<string, number>();
@@ -237,6 +256,7 @@ router.post("/import", async (req, res): Promise<void> => {
   let autoCategorized = 0;
   let needsReviewCount = 0;
 
+  try {
   for (const t of incoming) {
     const k = fingerprintOf(t.date, t.desc, t.amount);
     const have = counts.get(k) ?? 0;
@@ -273,6 +293,7 @@ router.post("/import", async (req, res): Promise<void> => {
               category: match.category ?? "Miscellaneous",
               subcategory: match.subcategory ?? "Uncategorized",
               matched: !match.needsReview,
+              account: match.account ?? account,
             });
           }
         }
@@ -322,7 +343,7 @@ router.post("/import", async (req, res): Promise<void> => {
         bankCategory: t.bankCat || null,
         amount: t.amount,
         status: isPending ? "Pending" : "Posted",
-        account: "Checking",
+        account,
         source: "bank",
         category,
         subcategory,
@@ -331,6 +352,7 @@ router.post("/import", async (req, res): Promise<void> => {
         note: isPending ? "Pending - not counted until posted" : null,
         needsReview,
         fingerprint: k,
+        importId: batch.id,
       })
       .returning();
     added++;
@@ -356,9 +378,28 @@ router.post("/import", async (req, res): Promise<void> => {
         category,
         subcategory,
         matched,
+        account,
       });
     }
   }
+  } catch (err) {
+    // Don't leave a zombie batch behind if the import failed mid-way and
+    // added no rows; batches with rows stay so the partial import is visible.
+    if (added === 0) {
+      await db.delete(importsTable).where(eq(importsTable.id, batch.id));
+    } else {
+      await db
+        .update(importsTable)
+        .set({ totalRows: incoming.length, added, duplicates })
+        .where(eq(importsTable.id, batch.id));
+    }
+    throw err;
+  }
+
+  await db
+    .update(importsTable)
+    .set({ totalRows: incoming.length, added, duplicates })
+    .where(eq(importsTable.id, batch.id));
 
   res.json(
     ImportCsvResponse.parse({
@@ -368,114 +409,74 @@ router.post("/import", async (req, res): Promise<void> => {
       pendingReplaced,
       autoCategorized,
       needsReview: needsReviewCount,
+      importId: batch.id,
     }),
   );
 });
 
-/**
- * Ensure an included bank expense has exactly one manual (spending) mirror.
- * Skips when a mirror is already linked to this bank row, or when an existing
- * manual entry fuzzy-covers it (±$0.25, ±4 days — the workbook's verified rule).
- */
-async function ensureManualMirror(
-  bankId: number,
-  t: {
-    date: string;
-    desc: string;
-    orig: string;
-    bankCat: string;
-    amount: number;
-    month: string;
-    category: string;
-    subcategory: string;
-    matched: boolean;
-  },
-): Promise<void> {
-  const linked = await db
-    .select({ id: transactionsTable.id })
-    .from(transactionsTable)
-    .where(eq(transactionsTable.linkedBankId, bankId));
-  if (linked.length) return;
-  const manualRows = await db
-    .select()
-    .from(transactionsTable)
-    .where(
-      and(
-        eq(transactionsTable.source, "manual"),
-        eq(transactionsTable.month, t.month),
-      ),
-    );
-  // If an existing manual entry covers this bank expense, link the closest
-  // unlinked one instead of duplicating, so categorization/exclusion edits
-  // propagate between the pair. A match must be identity-safe: within the
-  // workbook's ±$0.25/±4-day window AND either an (almost) exact amount or a
-  // recognizably similar description — never link unrelated purchases that
-  // merely share a price.
-  const candidates = manualRows
-    .filter(
-      (m) =>
-        m.linkedBankId == null &&
-        daysBetween(m.date, t.date) <= 4 &&
-        // exact amount on the same day, or similar merchant within ±$0.25/±4d
-        ((Math.abs(Math.abs(m.amount) - Math.abs(t.amount)) < 0.005 &&
-          daysBetween(m.date, t.date) === 0) ||
-          (Math.abs(Math.abs(m.amount) - Math.abs(t.amount)) <= 0.25 &&
-            descSimilar(m.description, m.originalDescription ?? "", t.desc, t.orig))),
-    )
-    .sort(
-      (a, b) =>
-        daysBetween(a.date, t.date) - daysBetween(b.date, t.date) ||
-        Math.abs(Math.abs(a.amount) - Math.abs(t.amount)) -
-          Math.abs(Math.abs(b.amount) - Math.abs(t.amount)),
-    );
-  if (candidates.length) {
-    await db
-      .update(transactionsTable)
-      .set({ linkedBankId: bankId })
-      .where(eq(transactionsTable.id, candidates[0].id));
+// Delete an import record, but never orphan data: only allowed once none of
+// its transactions remain (used to tidy up empty/test imports).
+router.delete("/imports/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ error: "Invalid id" });
     return;
   }
-  await db.insert(transactionsTable).values({
-    date: t.date,
-    description: t.desc,
-    originalDescription: t.orig || null,
-    bankCategory: t.bankCat || null,
-    amount: t.amount,
-    status: "Posted",
-    account: "Checking",
-    source: "manual",
-    category: t.category,
-    subcategory: t.subcategory,
-    include: true, // real spending counts even before categorization
-    month: t.month,
-    note: t.matched
-      ? "Imported from bank"
-      : "Imported from bank - needs categorization",
-    needsReview: !t.matched,
-    linkedBankId: bankId,
-  });
-}
-
-/** True when two transactions' descriptions plausibly refer to the same merchant. */
-function descSimilar(
-  aDesc: string,
-  aOrig: string,
-  bDesc: string,
-  bOrig: string,
-): boolean {
-  const as = [norm(aDesc), norm(aOrig)].filter(Boolean);
-  const bs = [norm(bDesc), norm(bOrig)].filter(Boolean);
-  for (const a of as) {
-    for (const b of bs) {
-      if (a.slice(0, 8) === b.slice(0, 8)) return true;
-      if (a.includes(b) || b.includes(a)) return true;
-      const tokensA = a.split(/[^A-Z0-9]+/).filter((w) => w.length >= 4);
-      const tokensB = new Set(b.split(/[^A-Z0-9]+/).filter((w) => w.length >= 4));
-      if (tokensA.some((w) => tokensB.has(w))) return true;
-    }
+  const [batch] = await db
+    .select()
+    .from(importsTable)
+    .where(eq(importsTable.id, id));
+  if (!batch) {
+    res.status(404).json({ error: "Import not found" });
+    return;
   }
-  return false;
-}
+  const remaining = await db
+    .select({ id: transactionsTable.id })
+    .from(transactionsTable)
+    .where(eq(transactionsTable.importId, id))
+    .limit(1);
+  if (remaining.length) {
+    res.status(409).json({ error: "Import still has transactions" });
+    return;
+  }
+  await db.delete(importsTable).where(eq(importsTable.id, id));
+  res.sendStatus(204);
+});
+
+// ---- Import history: which files/accounts the data came from ----
+router.get("/imports", async (_req, res): Promise<void> => {
+  const batches = await db
+    .select()
+    .from(importsTable)
+    .orderBy(desc(importsTable.importedAt), desc(importsTable.id));
+  const txns = await db
+    .select({
+      importId: transactionsTable.importId,
+      month: transactionsTable.month,
+    })
+    .from(transactionsTable)
+    .where(eq(transactionsTable.source, "bank"));
+  const monthsByImport = new Map<number, Set<string>>();
+  for (const t of txns) {
+    if (t.importId == null) continue;
+    if (!monthsByImport.has(t.importId)) monthsByImport.set(t.importId, new Set());
+    monthsByImport.get(t.importId)!.add(t.month);
+  }
+  res.json(
+    ListImportsResponse.parse(
+      batches.map((b) => ({
+        id: b.id,
+        fileName: b.fileName,
+        account: b.account,
+        totalRows: b.totalRows,
+        added: b.added,
+        duplicates: b.duplicates,
+        importedAt: b.importedAt.toISOString(),
+        months: [...(monthsByImport.get(b.id) ?? [])].sort(),
+      })),
+    ),
+  );
+});
 
 function computeInclude(
   category: string | null,

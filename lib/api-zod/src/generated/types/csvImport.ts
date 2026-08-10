@@ -11,4 +11,6 @@ export interface CsvImport {
   csvContent: string;
   /** @nullable */
   fileName?: string | null;
+  /** @nullable */
+  account?: string | null;
 }

@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
-import { useImportCsv, useListTransactions, useUpdateTransaction, useGetSettings, useListCategories, getListTransactionsQueryKey } from "@workspace/api-client-react";
+import { useImportCsv, useListTransactions, useUpdateTransaction, useGetSettings, useListCategories, getListTransactionsQueryKey, useListImports, getListImportsQueryKey } from "@workspace/api-client-react";
 import { formatCurrency, formatDate, PageHeader, EmptyState, Skeleton, Card, CardContent, Button, Select, Label, Input } from "@/components/ui/core";
-import { UploadCloud, CheckCircle, FileText, ArrowRight } from "lucide-react";
+import { UploadCloud, CheckCircle, FileText, ArrowRight, History, Landmark } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,12 +14,14 @@ export default function ImportReview() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
+  const [account, setAccount] = useState("Checking");
 
   const importMutation = useImportCsv({
     mutation: {
       onSuccess: (data) => {
         setImportResult(data);
         queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListImportsQueryKey() });
         queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
         toast({ 
           title: "Import Successful", 
@@ -41,7 +43,7 @@ export default function ImportReview() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      importMutation.mutate({ data: { csvContent: content, fileName: file.name } });
+      importMutation.mutate({ data: { csvContent: content, fileName: file.name, account: account.trim() || "Checking" } });
     };
     reader.readAsText(file);
   };
@@ -52,6 +54,26 @@ export default function ImportReview() {
         title="Import & Review" 
         description="Upload bank statements and categorize new transactions"
       />
+
+      {/* Account picker: files may come from several bank accounts */}
+      <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4">
+        <div className="space-y-1 w-full sm:w-64">
+          <Label htmlFor="import-account" className="text-xs flex items-center gap-1.5">
+            <Landmark size={14} /> Importing for account
+          </Label>
+          <Input
+            id="import-account"
+            value={account}
+            onChange={(e) => setAccount(e.target.value)}
+            placeholder="e.g. Checking, USAA Savings"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground max-w-md pb-2">
+          Uploading files from more than one bank account? Set the account name
+          before each upload so overlapping files dedupe within the same account
+          without dropping identical transactions from a different account.
+        </p>
+      </div>
 
       {/* Upload Zone */}
       <div 
@@ -128,6 +150,68 @@ export default function ImportReview() {
 
       {/* Review Queue */}
       <ReviewQueue month={selectedMonth} />
+
+      {/* Import history */}
+      <ImportHistory selectedMonth={selectedMonth} />
+    </div>
+  );
+}
+
+function ImportHistory({ selectedMonth }: { selectedMonth?: string }) {
+  const { data: imports, isLoading } = useListImports();
+  if (isLoading) return <Skeleton className="h-32 w-full" />;
+  if (!imports || imports.length === 0) return null;
+
+  const monthSources = selectedMonth
+    ? imports.filter((b) => b.months.includes(selectedMonth) && b.added > 0)
+    : [];
+  const monthAccounts = [...new Set(monthSources.map((b) => b.account))];
+
+  return (
+    <div className="space-y-4 mt-8" data-testid="import-history">
+      <div className="flex items-center gap-2">
+        <History size={18} className="text-muted-foreground" />
+        <h3 className="font-serif text-xl font-semibold text-foreground">Import History</h3>
+      </div>
+
+      {selectedMonth && monthSources.length > 0 && (
+        <div className="bg-muted/40 border border-border rounded-lg px-4 py-3 text-sm text-muted-foreground" data-testid="month-sources">
+          <span className="font-medium text-foreground">{selectedMonth}</span>{" "}
+          includes transactions from {monthSources.length} file{monthSources.length === 1 ? "" : "s"} across{" "}
+          {monthAccounts.length} account{monthAccounts.length === 1 ? "" : "s"} ({monthAccounts.join(", ")}).
+        </div>
+      )}
+
+      <div className="bg-card border border-card-border rounded-lg overflow-hidden shadow-sm">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <th className="px-4 py-3 font-medium">File</th>
+              <th className="px-4 py-3 font-medium">Account</th>
+              <th className="px-4 py-3 font-medium">Imported</th>
+              <th className="px-4 py-3 font-medium">Months Covered</th>
+              <th className="px-4 py-3 font-medium text-right">Added</th>
+              <th className="px-4 py-3 font-medium text-right">Dupes Skipped</th>
+            </tr>
+          </thead>
+          <tbody>
+            {imports.map((b) => (
+              <tr key={b.id} className="border-b border-border/50 last:border-0" data-testid={`import-row-${b.id}`}>
+                <td className="px-4 py-3 font-mono text-xs max-w-[220px] truncate" title={b.fileName || undefined}>
+                  {b.fileName || "(pasted)"}
+                </td>
+                <td className="px-4 py-3">
+                  <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-xs font-medium">{b.account}</span>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">{formatDate(b.importedAt.slice(0, 10))}</td>
+                <td className="px-4 py-3 text-muted-foreground">{b.months.join(", ") || "—"}</td>
+                <td className="px-4 py-3 text-right font-mono">{b.added}</td>
+                <td className="px-4 py-3 text-right font-mono text-muted-foreground">{b.duplicates}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

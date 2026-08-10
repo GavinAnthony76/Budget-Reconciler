@@ -10,7 +10,8 @@ import path from "node:path";
 import fs from "node:fs";
 // @ts-expect-error - xlsx-populate has no bundled types
 import XlsxPopulate from "xlsx-populate";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
+import { ensureManualMirror } from "./mirror";
 import {
   db,
   settingsTable,
@@ -85,7 +86,18 @@ async function ensureSchema(): Promise<void> {
       "needs_review" boolean NOT NULL DEFAULT false,
       "fingerprint" text,
       "linked_bank_id" integer,
+      "import_id" integer,
       "created_at" timestamp with time zone NOT NULL DEFAULT now()
+    );
+    ALTER TABLE "transactions" ADD COLUMN IF NOT EXISTS "import_id" integer;
+    CREATE TABLE IF NOT EXISTS "imports" (
+      "id" serial PRIMARY KEY,
+      "file_name" text,
+      "account" text NOT NULL DEFAULT 'Checking',
+      "total_rows" integer NOT NULL DEFAULT 0,
+      "added" integer NOT NULL DEFAULT 0,
+      "duplicates" integer NOT NULL DEFAULT 0,
+      "imported_at" timestamp with time zone NOT NULL DEFAULT now()
     );
     CREATE TABLE IF NOT EXISTS "rules" (
       "id" serial PRIMARY KEY,
@@ -303,8 +315,77 @@ async function backfillMirrorLinks(): Promise<void> {
   if (linked > 0) logger.info({ linked }, "Backfilled manual mirror links");
 }
 
+/**
+ * Enforce the invariant that every included, posted bank expense has exactly
+ * one manual mirror. Repairs two seed-time artifacts, idempotently:
+ * 1. Identical transactions (same fingerprint) where several manual rows got
+ *    linked to the SAME bank row while its twin has none — rebalance links.
+ * 2. Bank expenses with no mirror at all — link a fuzzy-matching unlinked
+ *    manual entry or create a mirror, same rule as CSV import.
+ */
+async function ensureMirrorsForBankExpenses(): Promise<void> {
+  const all = await db.select().from(transactionsTable);
+  const bank = all.filter(
+    (t) =>
+      t.source === "bank" && t.include && t.status === "Posted" && t.amount < 0,
+  );
+  const mirrorsByBank = new Map<number, number[]>();
+  for (const t of all) {
+    if (t.source === "manual" && t.linkedBankId != null) {
+      const list = mirrorsByBank.get(t.linkedBankId) ?? [];
+      list.push(t.id);
+      mirrorsByBank.set(t.linkedBankId, list);
+    }
+  }
+  // 1. Rebalance over-linked identical pairs
+  let rebalanced = 0;
+  for (const b of bank) {
+    const mirrors = mirrorsByBank.get(b.id) ?? [];
+    if (mirrors.length <= 1) continue;
+    const twins = bank.filter(
+      (o) =>
+        o.id !== b.id &&
+        o.fingerprint === b.fingerprint &&
+        (mirrorsByBank.get(o.id) ?? []).length === 0,
+    );
+    while (mirrors.length > 1 && twins.length) {
+      const twin = twins.shift()!;
+      const moved = mirrors.pop()!;
+      await db
+        .update(transactionsTable)
+        .set({ linkedBankId: twin.id })
+        .where(eq(transactionsTable.id, moved));
+      mirrorsByBank.set(twin.id, [moved]);
+      rebalanced++;
+    }
+    mirrorsByBank.set(b.id, mirrors);
+  }
+  // 2. Create/link mirrors for bank expenses that have none
+  let repaired = 0;
+  for (const b of bank) {
+    if ((mirrorsByBank.get(b.id) ?? []).length > 0) continue;
+    await ensureManualMirror(b.id, {
+      date: b.date,
+      desc: b.description,
+      orig: b.originalDescription ?? "",
+      bankCat: b.bankCategory ?? "",
+      amount: b.amount,
+      month: b.month,
+      category: b.category ?? "Miscellaneous",
+      subcategory: b.subcategory ?? "Uncategorized",
+      matched: !b.needsReview,
+      account: b.account ?? "Checking",
+    });
+    mirrorsByBank.set(b.id, [-1]); // keep the in-memory snapshot accurate
+    repaired++;
+  }
+  if (rebalanced || repaired)
+    logger.info({ rebalanced, repaired }, "Repaired manual mirror invariant");
+}
+
 export async function bootstrap(): Promise<void> {
   await ensureSchema();
   await seedFromWorkbook();
   await backfillMirrorLinks();
+  await ensureMirrorsForBankExpenses();
 }

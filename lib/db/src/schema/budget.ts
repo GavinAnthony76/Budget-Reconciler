@@ -45,6 +45,18 @@ export const planLinesTable = pgTable("plan_lines", {
   notes: text("notes"),
 });
 
+export const importsTable = pgTable("imports", {
+  id: serial("id").primaryKey(),
+  fileName: text("file_name"),
+  account: text("account").notNull().default("Checking"),
+  totalRows: integer("total_rows").notNull().default(0),
+  added: integer("added").notNull().default(0),
+  duplicates: integer("duplicates").notNull().default(0),
+  importedAt: timestamp("imported_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const transactionsTable = pgTable("transactions", {
   id: serial("id").primaryKey(),
   date: date("date", { mode: "string" }).notNull(),
@@ -63,6 +75,7 @@ export const transactionsTable = pgTable("transactions", {
   needsReview: boolean("needs_review").notNull().default(false),
   fingerprint: text("fingerprint"),
   linkedBankId: integer("linked_bank_id"),
+  importId: integer("import_id"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -81,4 +94,5 @@ export type IncomeSource = typeof incomeSourcesTable.$inferSelect;
 export type Category = typeof categoriesTable.$inferSelect;
 export type PlanLine = typeof planLinesTable.$inferSelect;
 export type Transaction = typeof transactionsTable.$inferSelect;
+export type ImportBatch = typeof importsTable.$inferSelect;
 export type Rule = typeof rulesTable.$inferSelect;

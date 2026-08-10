@@ -6,12 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ImportResult {
+export interface ImportBatch {
+  id: number;
+  /** @nullable */
+  fileName: string | null;
+  account: string;
   totalRows: number;
   added: number;
   duplicates: number;
-  pendingReplaced: number;
-  autoCategorized: number;
-  needsReview: number;
-  importId?: number;
+  importedAt: string;
+  months: string[];
 }

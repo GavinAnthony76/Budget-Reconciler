@@ -30,6 +30,13 @@ const cleanup = async () => {
   for (const t of await rows()) {
     await j(`/api/transactions/${t.id}`, { method: "DELETE" }).catch(() => {});
   }
+  // Imports can only be deleted once their transactions are gone
+  const batches = await j("/api/imports").catch(() => []);
+  for (const b of batches) {
+    if (b.fileName === "regression-test.csv") {
+      await j(`/api/imports/${b.id}`, { method: "DELETE" }).catch(() => {});
+    }
+  }
 };
 
 const csv = (lines) =>
@@ -47,7 +54,7 @@ try {
     subcategory: "Uncategorized",
   });
   await post("/api/import", {
-    csvContent: csv(['01/31/2031,SHELL OIL 123,SHELL OIL 123 TAMPA FL,Gas,-50.00,Posted,Checking']),
+    fileName: "regression-test.csv", csvContent: csv(['01/31/2031,SHELL OIL 123,SHELL OIL 123 TAMPA FL,Gas,-50.00,Posted,Checking']),
   });
   let r = await rows();
   const shellMirror = r.find((t) => t.source === "manual" && /shell/i.test(t.description));
@@ -64,7 +71,7 @@ try {
     subcategory: "Groceries",
   });
   await post("/api/import", {
-    csvContent: csv(['01/31/2031,Publix,PUBLIX #451 ORLANDO FL,Groceries,-82.55,Posted,Checking']),
+    fileName: "regression-test.csv", csvContent: csv(['01/31/2031,Publix,PUBLIX #451 ORLANDO FL,Groceries,-82.55,Posted,Checking']),
   });
   r = await rows();
   const publixManual = r.filter((t) => t.source === "manual" && /publix/i.test(t.description));
@@ -80,7 +87,7 @@ try {
 
   // 3. Excluded import (Transfer) must NOT create a manual mirror.
   await post("/api/import", {
-    csvContent: csv(['01/31/2031,Online Transfer to Savings,ONLINE TRANSFER,Transfer,-500.00,Posted,Checking']),
+    fileName: "regression-test.csv", csvContent: csv(['01/31/2031,Online Transfer to Savings,ONLINE TRANSFER,Transfer,-500.00,Posted,Checking']),
   });
   r = await rows();
   assert(
@@ -91,7 +98,7 @@ try {
   // 4. Exclusion propagates and clears review state; deleting the bank row
   //    removes the mirror too.
   await post("/api/import", {
-    csvContent: csv(['01/31/2031,ZZUNKNOWN MERCHANT 77,ZZUNKNOWN MERCHANT 77 FL,Category Pending,-19.99,Posted,Checking']),
+    fileName: "regression-test.csv", csvContent: csv(['01/31/2031,ZZUNKNOWN MERCHANT 77,ZZUNKNOWN MERCHANT 77 FL,Category Pending,-19.99,Posted,Checking']),
   });
   r = await rows();
   const unknownBank = r.find((t) => t.source === "bank" && /zzunknown/i.test(t.description));
@@ -117,7 +124,7 @@ try {
 
   // 5. Pending rows: no mirror until posted; posting creates it once.
   await post("/api/import", {
-    csvContent: csv(['01/31/2031,STARBUCKS 991,STARBUCKS 991 MIAMI FL,Coffee Shops,-6.45,Pending,Checking']),
+    fileName: "regression-test.csv", csvContent: csv(['01/31/2031,STARBUCKS 991,STARBUCKS 991 MIAMI FL,Coffee Shops,-6.45,Pending,Checking']),
   });
   r = await rows();
   assert(
@@ -125,7 +132,7 @@ try {
     "pending import has no manual mirror",
   );
   await post("/api/import", {
-    csvContent: csv(['01/31/2031,STARBUCKS 991,STARBUCKS 991 MIAMI FL,Coffee Shops,-6.45,Posted,Checking']),
+    fileName: "regression-test.csv", csvContent: csv(['01/31/2031,STARBUCKS 991,STARBUCKS 991 MIAMI FL,Coffee Shops,-6.45,Posted,Checking']),
   });
   r = await rows();
   const sbManual = r.filter((t) => t.source === "manual" && /starbucks/i.test(t.description));

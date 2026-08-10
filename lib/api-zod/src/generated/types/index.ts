@@ -16,6 +16,7 @@ export * from './dashboardSummary';
 export * from './getDashboardParams';
 export * from './getReconciliationParams';
 export * from './healthStatus';
+export * from './importBatch';
 export * from './importResult';
 export * from './incomeSource';
 export * from './incomeSourceInput';

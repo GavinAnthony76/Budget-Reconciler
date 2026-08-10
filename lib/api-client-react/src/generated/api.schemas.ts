@@ -191,6 +191,8 @@ export interface CsvImport {
   csvContent: string;
   /** @nullable */
   fileName?: string | null;
+  /** @nullable */
+  account?: string | null;
 }
 
 export interface ImportResult {
@@ -200,6 +202,19 @@ export interface ImportResult {
   pendingReplaced: number;
   autoCategorized: number;
   needsReview: number;
+  importId?: number;
+}
+
+export interface ImportBatch {
+  id: number;
+  /** @nullable */
+  fileName: string | null;
+  account: string;
+  totalRows: number;
+  added: number;
+  duplicates: number;
+  importedAt: string;
+  months: string[];
 }
 
 export interface Rule {

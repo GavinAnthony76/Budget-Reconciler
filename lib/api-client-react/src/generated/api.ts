@@ -29,6 +29,7 @@ import type {
   GetDashboardParams,
   GetReconciliationParams,
   HealthStatus,
+  ImportBatch,
   ImportResult,
   IncomeSource,
   IncomeSourceInput,
@@ -1616,6 +1617,154 @@ export const useImportCsv = <TError = ErrorType<ApiMessage>,
         TContext
       > => {
       return useMutation(getImportCsvMutationOptions(options));
+    }
+
+export const getListImportsUrl = () => {
+
+
+
+
+  return `/api/imports`
+}
+
+/**
+ * @summary List past CSV imports (file, account, counts, months covered)
+ */
+export const listImports = async ( options?: Parameters<typeof customFetch>[1]): Promise<ImportBatch[]> => {
+
+  return customFetch<ImportBatch[]>(getListImportsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListImportsQueryKey = () => {
+    return [
+    `/api/imports`
+    ] as const;
+    }
+
+
+export const getListImportsQueryOptions = <TData = Awaited<ReturnType<typeof listImports>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listImports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListImportsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listImports>>> = ({ signal }) => listImports({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listImports>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListImportsQueryResult = NonNullable<Awaited<ReturnType<typeof listImports>>>
+export type ListImportsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List past CSV imports (file, account, counts, months covered)
+ */
+
+export function useListImports<TData = Awaited<ReturnType<typeof listImports>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listImports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListImportsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDeleteImportUrl = (id: number,) => {
+
+
+
+
+  return `/api/imports/${id}`
+}
+
+/**
+ * @summary Delete an import record (only when none of its transactions remain)
+ */
+export const deleteImport = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteImportUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteImportMutationOptions = <TError = ErrorType<ApiMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteImport>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteImport>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteImport>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteImport(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteImportMutationResult = NonNullable<Awaited<ReturnType<typeof deleteImport>>>
+
+    export type DeleteImportMutationError = ErrorType<ApiMessage>
+
+    /**
+ * @summary Delete an import record (only when none of its transactions remain)
+ */
+export const useDeleteImport = <TError = ErrorType<ApiMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteImport>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteImport>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteImportMutationOptions(options));
     }
 
 export const getListRulesUrl = () => {

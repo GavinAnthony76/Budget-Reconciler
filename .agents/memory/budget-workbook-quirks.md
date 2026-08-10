@@ -9,4 +9,6 @@ description: Non-obvious conventions and pitfalls in the KJA household budget wo
 - SheetJS (`xlsx`) reads of xlsx-populate output may not show `<f>` formulas; verify against raw sheet XML before assuming formulas are missing.
 - Manual-vs-bank reconciliation only matches if imported-but-uncategorized rows still count as spending (Include = Yes) and every manual row has a Month value (some had text dates and blank months).
 
-**Budget app durable rule:** Manual-source spending rows are the source of truth for actuals; bank rows only feed import and reconciliation. Any included bank expense must have exactly one manual mirror, or dashboard totals and reconciliation diverge.
+**Budget app durable rule:** Manual-source spending rows are the source of truth for actuals; bank rows only feed import and reconciliation. Any included bank expense must have exactly one manual mirror, or dashboard totals and reconciliation diverge. A startup repair pass enforces this invariant (seed data may violate it).
+- The user's bank CSVs come from MULTIPLE accounts and files can be pairwise disjoint even over overlapping date ranges — never assume overlap means duplicates. Dedupe fingerprints only within the same account; identical fingerprints on different accounts are both real.
+- The user's workbook failed to reconcile because pasted bank rows had no Manual Actuals counterparts (116 bank vs 44 manual) — the mirror invariant, again.

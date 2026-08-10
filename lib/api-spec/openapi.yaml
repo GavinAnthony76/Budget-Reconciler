@@ -424,6 +424,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiMessage"
+  /imports:
+    get:
+      operationId: listImports
+      tags: [import]
+      summary: List past CSV imports (file, account, counts, months covered)
+      responses:
+        "200":
+          description: Import history, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ImportBatch"
+  /imports/{id}:
+    delete:
+      operationId: deleteImport
+      tags: [import]
+      summary: Delete an import record (only when none of its transactions remain)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "409":
+          description: Import still has transactions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
   /rules:
     get:
       operationId: listRules
@@ -687,6 +726,7 @@ components:
       properties:
         csvContent: { type: string, minLength: 1 }
         fileName: { type: ["string", "null"] }
+        account: { type: ["string", "null"] }
     ImportResult:
       type: object
       required: [totalRows, added, duplicates, pendingReplaced, autoCategorized, needsReview]
@@ -697,6 +737,21 @@ components:
         pendingReplaced: { type: number }
         autoCategorized: { type: number }
         needsReview: { type: number }
+        importId: { type: number }
+    ImportBatch:
+      type: object
+      required: [id, fileName, account, totalRows, added, duplicates, importedAt, months]
+      properties:
+        id: { type: number }
+        fileName: { type: ["string", "null"] }
+        account: { type: string }
+        totalRows: { type: number }
+        added: { type: number }
+        duplicates: { type: number }
+        importedAt: { type: string }
+        months:
+          type: array
+          items: { type: string }
     Rule:
       type: object
       required: [id, pattern, category, subcategory]
