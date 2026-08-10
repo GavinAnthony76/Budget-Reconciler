@@ -1,0 +1,1 @@
+- [Budget workbook quirks](budget-workbook-quirks.md) — pay-cycle month cutoff (day>=Setup!B9), xlsx-populate shared-formula pitfalls, reconciliation rules.

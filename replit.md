@@ -1,6 +1,6 @@
-# [Project name]
+# Household Budget Automation
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Automates a personal Excel budget workbook: imports bank CSV downloads, auto-categorizes transactions via merchant rules, and reconciles the workbook (a companion web app is planned).
 
 ## Run & Operate
 
@@ -22,7 +22,16 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `scripts/src/import-bank-csv.ts` — bank CSV → workbook importer (run: `pnpm --filter @workspace/scripts run import-bank -- --csv <csv> --in <xlsx> --out <xlsx>`; paths resolve from `scripts/`)
+- `attached_assets/` — user's original workbook + bank CSV downloads
+- `exports/KJA_Budget_Fixed.xlsx` — latest fixed/imported workbook output
+
+## Workbook conventions (source of truth for budget logic)
+
+- Budget month runs on a pay cycle: transactions on/after the "Budget Month Start Day" (Setup!B9, default 29) belong to the NEXT month
+- "Rules" sheet: merchant substring → Budget Category/Subcategory; takes precedence over the Setup!E14:G79 bank-category mapping table
+- Pending bank rows are excluded from totals; a matching Posted row replaces its Pending twin on import
+- Manual Actuals is the actuals source ("Manual (Live)" mode); the importer appends bank expenses not already entered manually (match: amount ±$0.25, date ±4 days)
 
 ## Architecture decisions
 

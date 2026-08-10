@@ -5,10 +5,17 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "import-bank": "tsx ./src/import-bank-csv.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "tsx": "catalog:"
+    "@types/papaparse": "^5.5.2",
+    "papaparse": "^5.5.4",
+    "tsx": "catalog:",
+    "xlsx-populate": "^1.21.0"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
   }
 }

@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "ytqj7BNubAGhvmdqbJ7jF"
+uri = "file://exports/KJA_Budget_Fixed.xlsx"
+type = "table"
+title = "Fixed Budget Workbook (KJA)"
+description = "Repaired workbook with bank CSV imported: transactions auto-categorized via the new Rules sheet, Manual Actuals populated, pay-cycle month logic fixed (Setup!B9), and reconciliation aligned."
