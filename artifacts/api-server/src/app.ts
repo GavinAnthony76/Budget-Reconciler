@@ -25,8 +25,10 @@ app.use(
     },
   }),
 );
-app.use(cors());
-app.use(express.json());
+// Private single-user app served same-origin through the workspace proxy —
+// do not allow cross-origin browser access to financial data.
+app.use(cors({ origin: false }));
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);

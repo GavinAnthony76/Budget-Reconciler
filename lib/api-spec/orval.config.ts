@@ -37,6 +37,12 @@ export default defineConfig({
           path: path.resolve(apiClientReactSrc, "custom-fetch.ts"),
           name: "customFetch",
         },
+        operations: {
+          exportWorkbook: {
+            // Binary download — the client must request a Blob explicitly.
+            requestOptions: { responseType: "blob" },
+          },
+        },
       },
     },
   },

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Household Budget"
+description = "A private personal budgeting app that automates the user's Excel workbook workflow: upload bank CSV downloads, auto-categorize transactions with merchant rules, review unknowns in one click, track planned vs actual spending, reconcile manual vs bank actuals, and export the whole state as an Excel workbook matching the original layout."
+version = "1.0.0"
+id = "artifacts/budget-app"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24432
+
+[services.development]
+run = "pnpm --filter @workspace/budget-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/budget-app", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/budget-app/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24432"
+BASE_PATH = "/"

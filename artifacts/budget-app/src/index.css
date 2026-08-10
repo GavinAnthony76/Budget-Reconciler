@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary-border: var(--sidebar-primary-border);
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-accent-border: var(--sidebar-accent-border);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --button-outline: rgba(0, 0, 0, 0.1);
+  --badge-outline: rgba(0, 0, 0, 0.05);
+  --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(0, 0, 0, 0.03);
+  --elevate-2: rgba(0, 0, 0, 0.08);
+
+  /* Refined Bookkeeper Palette */
+  /* Warm cream background */
+  --background: 45 20% 96%;
+  /* Deep charcoal green text */
+  --foreground: 160 30% 15%;
+  /* Soft borders */
+  --border: 160 15% 85%;
+  --input: 160 15% 85%;
+  --ring: 160 40% 25%;
+
+  /* Slightly lighter warm cream for cards */
+  --card: 45 30% 99%;
+  --card-foreground: 160 30% 15%;
+  --card-border: 160 15% 85%;
+
+  --sidebar: 160 40% 12%;
+  --sidebar-foreground: 45 20% 96%;
+  --sidebar-border: 160 40% 15%;
+  --sidebar-primary: 40 40% 60%;
+  --sidebar-primary-foreground: 160 40% 12%;
+  --sidebar-accent: 160 40% 20%;
+  --sidebar-accent-foreground: 45 20% 96%;
+  --sidebar-ring: 40 40% 60%;
+
+  --popover: 45 30% 99%;
+  --popover-foreground: 160 30% 15%;
+  --popover-border: 160 15% 85%;
+
+  /* Bold deep forest green */
+  --primary: 160 40% 25%;
+  --primary-foreground: 45 20% 98%;
+
+  /* Warm gold/bronze accent */
+  --secondary: 40 40% 60%;
+  --secondary-foreground: 160 40% 12%;
+
+  --muted: 160 15% 90%;
+  --muted-foreground: 160 20% 45%;
+
+  --accent: 40 40% 90%;
+  --accent-foreground: 160 40% 25%;
+
+  /* Terracotta red for destructive actions */
+  --destructive: 15 60% 50%;
+  --destructive-foreground: 45 20% 98%;
+
+  --chart-1: 160 40% 25%;
+  --chart-2: 40 40% 60%;
+  --chart-3: 15 60% 50%;
+  --chart-4: 160 20% 45%;
+  --chart-5: 45 30% 80%;
+
+  --app-font-sans: 'Outfit', sans-serif;
+  --app-font-serif: 'Playfair Display', serif;
+  --app-font-mono: 'Space Mono', monospace;
+  
+  --radius: 0.25rem;
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.dark {
+  /* Minimal dark mode support, defaulting to deep green */
+  --background: 160 40% 10%;
+  --foreground: 45 20% 96%;
+  --border: 160 30% 20%;
+  --input: 160 30% 20%;
+  --ring: 40 40% 60%;
+
+  --card: 160 40% 12%;
+  --card-foreground: 45 20% 96%;
+  --card-border: 160 30% 20%;
+
+  --sidebar: 160 40% 8%;
+  --sidebar-foreground: 45 20% 96%;
+  --sidebar-border: 160 30% 20%;
+  --sidebar-primary: 40 40% 60%;
+  --sidebar-primary-foreground: 160 40% 8%;
+  --sidebar-accent: 160 30% 20%;
+  --sidebar-accent-foreground: 45 20% 96%;
+  --sidebar-ring: 40 40% 60%;
+
+  --popover: 160 40% 12%;
+  --popover-foreground: 45 20% 96%;
+  --popover-border: 160 30% 20%;
+
+  --primary: 160 30% 40%;
+  --primary-foreground: 45 20% 96%;
+
+  --secondary: 40 30% 30%;
+  --secondary-foreground: 45 20% 96%;
+
+  --muted: 160 30% 20%;
+  --muted-foreground: 160 20% 60%;
+
+  --accent: 160 30% 20%;
+  --accent-foreground: 45 20% 96%;
+
+  --destructive: 15 50% 40%;
+  --destructive-foreground: 45 20% 96%;
+
+  --chart-1: 160 30% 40%;
+  --chart-2: 40 40% 60%;
+  --chart-3: 15 50% 40%;
+  --chart-4: 160 20% 60%;
+  --chart-5: 45 20% 40%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
