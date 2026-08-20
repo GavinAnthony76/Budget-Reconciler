@@ -185,15 +185,15 @@ export function categorizeWith(
   return { category: "Miscellaneous", subcategory: "Uncategorized", matched: false };
 }
 
-export async function loadRules(): Promise<Rule[]> {
-  return db.select().from(rulesTable);
+export async function loadRules(userId: string): Promise<Rule[]> {
+  return db.select().from(rulesTable).where(eq(rulesTable.userId, userId));
 }
 
 /**
  * Retroactively apply a description rule to transactions still needing review.
  * Returns the number of transactions updated.
  */
-export async function applyRuleRetroactively(rule: {
+export async function applyRuleRetroactively(userId: string, rule: {
   pattern: string;
   category: string;
   subcategory: string;
@@ -203,7 +203,7 @@ export async function applyRuleRetroactively(rule: {
   const candidates = await db
     .select()
     .from(transactionsTable)
-    .where(and(eq(transactionsTable.needsReview, true)));
+    .where(and(eq(transactionsTable.needsReview, true), eq(transactionsTable.userId, userId)));
   const fields = {
     category: rule.category,
     subcategory: rule.subcategory,
@@ -218,19 +218,19 @@ export async function applyRuleRetroactively(rule: {
       await db
         .update(transactionsTable)
         .set(fields)
-        .where(eq(transactionsTable.id, t.id));
+        .where(and(eq(transactionsTable.id, t.id), eq(transactionsTable.userId, userId)));
       // Propagate to the linked counterpart even if it was already reviewed —
       // a linked pair must never end up with diverging categories.
       if (t.source === "bank") {
         await db
           .update(transactionsTable)
           .set(fields)
-          .where(eq(transactionsTable.linkedBankId, t.id));
+          .where(and(eq(transactionsTable.linkedBankId, t.id), eq(transactionsTable.userId, userId)));
       } else if (t.linkedBankId != null) {
         await db
           .update(transactionsTable)
           .set(fields)
-          .where(eq(transactionsTable.id, t.linkedBankId));
+          .where(and(eq(transactionsTable.id, t.linkedBankId), eq(transactionsTable.userId, userId)));
       }
       updated++;
     }

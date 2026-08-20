@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   db,
   transactionsTable,
@@ -14,22 +14,24 @@ import {
 } from "@workspace/api-zod";
 import { norm } from "../lib/budget";
 import { getOrCreateSettings } from "./budget";
+import { currentUserId } from "../middlewares/requireUser";
 
 const router: IRouter = Router();
 
 router.get("/dashboard", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const q = GetDashboardQueryParams.safeParse(req.query);
   if (!q.success) {
     res.status(400).json({ error: q.error.message });
     return;
   }
-  const settings = await getOrCreateSettings();
+  const settings = await getOrCreateSettings(userId);
   const month = q.data.month ?? settings.selectedMonth;
 
   const [txns, planLines, incomes] = await Promise.all([
-    db.select().from(transactionsTable).where(eq(transactionsTable.month, month)),
-    db.select().from(planLinesTable).where(eq(planLinesTable.month, month)),
-    db.select().from(incomeSourcesTable),
+    db.select().from(transactionsTable).where(and(eq(transactionsTable.month, month), eq(transactionsTable.userId, userId))),
+    db.select().from(planLinesTable).where(and(eq(planLinesTable.month, month), eq(planLinesTable.userId, userId))),
+    db.select().from(incomeSourcesTable).where(eq(incomeSourcesTable.userId, userId)),
   ]);
 
   const plannedFromSources = incomes.reduce(
@@ -100,17 +102,18 @@ router.get("/dashboard", async (req, res): Promise<void> => {
 });
 
 router.get("/reconciliation", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const q = GetReconciliationQueryParams.safeParse(req.query);
   if (!q.success) {
     res.status(400).json({ error: q.error.message });
     return;
   }
-  const settings = await getOrCreateSettings();
+  const settings = await getOrCreateSettings(userId);
   const month = q.data.month ?? settings.selectedMonth;
   const txns = await db
     .select()
     .from(transactionsTable)
-    .where(eq(transactionsTable.month, month));
+    .where(and(eq(transactionsTable.month, month), eq(transactionsTable.userId, userId)));
 
   const manual = new Map<string, number>();
   const bank = new Map<string, number>();

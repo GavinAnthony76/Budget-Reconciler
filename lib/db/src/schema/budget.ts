@@ -11,6 +11,7 @@ import {
 
 export const settingsTable = pgTable("settings", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   selectedMonth: text("selected_month").notNull().default("August 2026"),
   monthStartDay: integer("month_start_day").notNull().default(29),
   checkingBuffer: doublePrecision("checking_buffer").notNull().default(500),
@@ -19,6 +20,7 @@ export const settingsTable = pgTable("settings", {
 
 export const incomeSourcesTable = pgTable("income_sources", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   name: text("name").notNull(),
   owner: text("owner").notNull().default("Household"),
   frequency: text("frequency").notNull().default("Monthly"),
@@ -29,6 +31,7 @@ export const incomeSourcesTable = pgTable("income_sources", {
 
 export const categoriesTable = pgTable("categories", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   name: text("name").notNull().unique(),
   subcategories: text("subcategories").array().notNull().default([]),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -36,6 +39,7 @@ export const categoriesTable = pgTable("categories", {
 
 export const planLinesTable = pgTable("plan_lines", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   month: text("month").notNull().default(""),
   category: text("category").notNull(),
   subcategory: text("subcategory").notNull(),
@@ -48,6 +52,7 @@ export const planLinesTable = pgTable("plan_lines", {
 
 export const importsTable = pgTable("imports", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   fileName: text("file_name"),
   account: text("account").notNull().default("Checking"),
   totalRows: integer("total_rows").notNull().default(0),
@@ -60,6 +65,7 @@ export const importsTable = pgTable("imports", {
 
 export const transactionsTable = pgTable("transactions", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   date: date("date", { mode: "string" }).notNull(),
   description: text("description").notNull(),
   originalDescription: text("original_description"),
@@ -84,6 +90,7 @@ export const transactionsTable = pgTable("transactions", {
 
 export const rulesTable = pgTable("rules", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   pattern: text("pattern").notNull(),
   matchType: text("match_type").notNull().default("description"),
   category: text("category").notNull(),

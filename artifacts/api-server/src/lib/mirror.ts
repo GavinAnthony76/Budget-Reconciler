@@ -10,6 +10,7 @@ import { daysBetween, norm } from "./budget";
  * every included posted bank expense has exactly one manual mirror.
  */
 export async function ensureManualMirror(
+  userId: string,
   bankId: number,
   t: {
     date: string;
@@ -27,7 +28,7 @@ export async function ensureManualMirror(
   const linked = await db
     .select({ id: transactionsTable.id })
     .from(transactionsTable)
-    .where(eq(transactionsTable.linkedBankId, bankId));
+    .where(and(eq(transactionsTable.linkedBankId, bankId), eq(transactionsTable.userId, userId)));
   if (linked.length) return;
   const manualRows = await db
     .select()
@@ -36,6 +37,7 @@ export async function ensureManualMirror(
       and(
         eq(transactionsTable.source, "manual"),
         eq(transactionsTable.month, t.month),
+        eq(transactionsTable.userId, userId),
       ),
     );
   // If an existing manual entry covers this bank expense, link the closest
@@ -67,10 +69,11 @@ export async function ensureManualMirror(
     await db
       .update(transactionsTable)
       .set({ linkedBankId: bankId })
-      .where(eq(transactionsTable.id, candidates[0].id));
+      .where(and(eq(transactionsTable.id, candidates[0].id), eq(transactionsTable.userId, userId)));
     return;
   }
   await db.insert(transactionsTable).values({
+    userId,
     date: t.date,
     description: t.desc,
     originalDescription: t.orig || null,

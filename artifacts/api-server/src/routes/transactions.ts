@@ -28,16 +28,18 @@ import {
 } from "../lib/budget";
 import { getOrCreateSettings } from "./budget";
 import { ensureManualMirror } from "../lib/mirror";
+import { currentUserId } from "../middlewares/requireUser";
 
 const router: IRouter = Router();
 
 router.get("/transactions", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const q = ListTransactionsQueryParams.safeParse(req.query);
   if (!q.success) {
     res.status(400).json({ error: q.error.message });
     return;
   }
-  const conds = [];
+  const conds = [eq(transactionsTable.userId, userId)];
   if (q.data.month) conds.push(eq(transactionsTable.month, q.data.month));
   if (q.data.needsReview !== undefined)
     conds.push(eq(transactionsTable.needsReview, q.data.needsReview));
@@ -51,17 +53,19 @@ router.get("/transactions", async (req, res): Promise<void> => {
 });
 
 router.post("/transactions", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const parsed = CreateTransactionBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const settings = await getOrCreateSettings();
+  const settings = await getOrCreateSettings(userId);
   const data = parsed.data;
   const month = budgetMonth(data.date, settings.monthStartDay);
   const [row] = await db
     .insert(transactionsTable)
     .values({
+      userId,
       date: data.date,
       description: data.description,
       amount: data.amount,
@@ -80,6 +84,7 @@ router.post("/transactions", async (req, res): Promise<void> => {
 });
 
 router.patch("/transactions/:id", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const params = UpdateTransactionParams.safeParse(req.params);
   const parsed = UpdateTransactionBody.safeParse(req.body);
   if (!params.success || !parsed.success) {
@@ -94,7 +99,7 @@ router.patch("/transactions/:id", async (req, res): Promise<void> => {
   const [row] = await db
     .update(transactionsTable)
     .set(update)
-    .where(eq(transactionsTable.id, params.data.id))
+    .where(and(eq(transactionsTable.id, params.data.id), eq(transactionsTable.userId, userId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Transaction not found" });
@@ -112,12 +117,12 @@ router.patch("/transactions/:id", async (req, res): Promise<void> => {
       await db
         .update(transactionsTable)
         .set(propagate)
-        .where(eq(transactionsTable.linkedBankId, row.id));
+        .where(and(eq(transactionsTable.linkedBankId, row.id), eq(transactionsTable.userId, userId)));
     } else if (row.linkedBankId != null) {
       await db
         .update(transactionsTable)
         .set(propagate)
-        .where(eq(transactionsTable.id, row.linkedBankId));
+        .where(and(eq(transactionsTable.id, row.linkedBankId), eq(transactionsTable.userId, userId)));
     }
   }
   if (saveRule && fields.category && fields.subcategory) {
@@ -126,12 +131,13 @@ router.patch("/transactions/:id", async (req, res): Promise<void> => {
         ? rulePattern.trim()
         : row.description;
     await db.insert(rulesTable).values({
+      userId,
       pattern,
       matchType: "description",
       category: fields.category,
       subcategory: fields.subcategory,
     });
-    await applyRuleRetroactively({
+    await applyRuleRetroactively(userId, {
       pattern,
       category: fields.category,
       subcategory: fields.subcategory,
@@ -141,6 +147,7 @@ router.patch("/transactions/:id", async (req, res): Promise<void> => {
 });
 
 router.delete("/transactions/:id", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const params = DeleteTransactionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -148,7 +155,7 @@ router.delete("/transactions/:id", async (req, res): Promise<void> => {
   }
   const [row] = await db
     .delete(transactionsTable)
-    .where(eq(transactionsTable.id, params.data.id))
+    .where(and(eq(transactionsTable.id, params.data.id), eq(transactionsTable.userId, userId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Transaction not found" });
@@ -159,25 +166,26 @@ router.delete("/transactions/:id", async (req, res): Promise<void> => {
   if (row.source === "bank") {
     await db
       .delete(transactionsTable)
-      .where(eq(transactionsTable.linkedBankId, row.id));
+      .where(and(eq(transactionsTable.linkedBankId, row.id), eq(transactionsTable.userId, userId)));
   } else if (row.linkedBankId != null) {
     await db
       .delete(transactionsTable)
-      .where(eq(transactionsTable.id, row.linkedBankId));
+      .where(and(eq(transactionsTable.id, row.linkedBankId), eq(transactionsTable.userId, userId)));
   }
   res.sendStatus(204);
 });
 
 // ---- CSV import ----
 router.post("/import", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const parsed = ImportCsvBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const settings = await getOrCreateSettings();
+  const settings = await getOrCreateSettings(userId);
   const startDay = settings.monthStartDay;
-  const rules = await loadRules();
+  const rules = await loadRules(userId);
 
   const csv = Papa.parse<Record<string, string>>(parsed.data.csvContent, {
     header: true,
@@ -233,7 +241,7 @@ router.post("/import", async (req, res): Promise<void> => {
   const allBank = await db
     .select()
     .from(transactionsTable)
-    .where(eq(transactionsTable.source, "bank"));
+    .where(and(eq(transactionsTable.source, "bank"), eq(transactionsTable.userId, userId)));
   let account = (parsed.data.account ?? "").trim();
   if (!account) {
     const incomingKeys = new Set(
@@ -273,6 +281,7 @@ router.post("/import", async (req, res): Promise<void> => {
   const [batch] = await db
     .insert(importsTable)
     .values({
+      userId,
       fileName: parsed.data.fileName ?? null,
       account,
       totalRows: 0,
@@ -310,7 +319,7 @@ router.post("/import", async (req, res): Promise<void> => {
           await db
             .update(transactionsTable)
             .set({ status: "Posted", include: computeInclude(match.category, match.bankCategory, "Posted") })
-            .where(eq(transactionsTable.id, match.id));
+            .where(and(eq(transactionsTable.id, match.id), eq(transactionsTable.userId, userId)));
           match.status = "Posted";
           // A newly-posted expense now counts — make sure it has a manual mirror
           if (
@@ -319,7 +328,7 @@ router.post("/import", async (req, res): Promise<void> => {
             match.category !== "Income" &&
             computeInclude(match.category, match.bankCategory, "Posted")
           ) {
-            await ensureManualMirror(match.id, {
+            await ensureManualMirror(userId, match.id, {
               date: match.date,
               desc: match.description,
               orig: match.originalDescription ?? "",
@@ -352,7 +361,7 @@ router.post("/import", async (req, res): Promise<void> => {
       if (pending) {
         await db
           .delete(transactionsTable)
-          .where(eq(transactionsTable.id, pending.id));
+          .where(and(eq(transactionsTable.id, pending.id), eq(transactionsTable.userId, userId)));
         pending.status = "__REPLACED__";
         pendingReplaced++;
       }
@@ -373,6 +382,7 @@ router.post("/import", async (req, res): Promise<void> => {
     const [bankRow] = await db
       .insert(transactionsTable)
       .values({
+        userId,
         date: t.date,
         description: t.desc,
         originalDescription: t.orig || null,
@@ -404,7 +414,7 @@ router.post("/import", async (req, res): Promise<void> => {
       category !== "Transfers" &&
       category !== "Income"
     ) {
-      await ensureManualMirror(bankRow.id, {
+      await ensureManualMirror(userId, bankRow.id, {
         date: t.date,
         desc: t.desc,
         orig: t.orig,
@@ -422,12 +432,12 @@ router.post("/import", async (req, res): Promise<void> => {
     // Don't leave a zombie batch behind if the import failed mid-way and
     // added no rows; batches with rows stay so the partial import is visible.
     if (added === 0) {
-      await db.delete(importsTable).where(eq(importsTable.id, batch.id));
+      await db.delete(importsTable).where(and(eq(importsTable.id, batch.id), eq(importsTable.userId, userId)));
     } else {
       await db
         .update(importsTable)
         .set({ totalRows: incoming.length, added, duplicates })
-        .where(eq(importsTable.id, batch.id));
+        .where(and(eq(importsTable.id, batch.id), eq(importsTable.userId, userId)));
     }
     throw err;
   }
@@ -435,7 +445,7 @@ router.post("/import", async (req, res): Promise<void> => {
   await db
     .update(importsTable)
     .set({ totalRows: incoming.length, added, duplicates })
-    .where(eq(importsTable.id, batch.id));
+    .where(and(eq(importsTable.id, batch.id), eq(importsTable.userId, userId)));
 
   res.json(
     ImportCsvResponse.parse({
@@ -454,6 +464,7 @@ router.post("/import", async (req, res): Promise<void> => {
 // Delete an import record, but never orphan data: only allowed once none of
 // its transactions remain (used to tidy up empty/test imports).
 router.delete("/imports/:id", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) {
     res.status(400).json({ error: "Invalid id" });
@@ -462,7 +473,7 @@ router.delete("/imports/:id", async (req, res): Promise<void> => {
   const [batch] = await db
     .select()
     .from(importsTable)
-    .where(eq(importsTable.id, id));
+    .where(and(eq(importsTable.id, id), eq(importsTable.userId, userId)));
   if (!batch) {
     res.status(404).json({ error: "Import not found" });
     return;
@@ -470,21 +481,23 @@ router.delete("/imports/:id", async (req, res): Promise<void> => {
   const remaining = await db
     .select({ id: transactionsTable.id })
     .from(transactionsTable)
-    .where(eq(transactionsTable.importId, id))
+    .where(and(eq(transactionsTable.importId, id), eq(transactionsTable.userId, userId)))
     .limit(1);
   if (remaining.length) {
     res.status(409).json({ error: "Import still has transactions" });
     return;
   }
-  await db.delete(importsTable).where(eq(importsTable.id, id));
+  await db.delete(importsTable).where(and(eq(importsTable.id, id), eq(importsTable.userId, userId)));
   res.sendStatus(204);
 });
 
 // ---- Import history: which files/accounts the data came from ----
-router.get("/imports", async (_req, res): Promise<void> => {
+router.get("/imports", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const batches = await db
     .select()
     .from(importsTable)
+    .where(eq(importsTable.userId, userId))
     .orderBy(desc(importsTable.importedAt), desc(importsTable.id));
   const txns = await db
     .select({
@@ -492,7 +505,7 @@ router.get("/imports", async (_req, res): Promise<void> => {
       month: transactionsTable.month,
     })
     .from(transactionsTable)
-    .where(eq(transactionsTable.source, "bank"));
+    .where(and(eq(transactionsTable.source, "bank"), eq(transactionsTable.userId, userId)));
   const monthsByImport = new Map<number, Set<string>>();
   for (const t of txns) {
     if (t.importId == null) continue;

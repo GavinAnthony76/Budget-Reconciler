@@ -9,13 +9,17 @@ import {
   Download,
   Command,
   Menu,
-  X
+  X,
+  LogOut
 } from "lucide-react";
 import { useGetSettings, useListMonths, useUpdateSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useClerk, useUser } from "@clerk/react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { signOut } = useClerk();
+  const { user } = useUser();
   const [location] = useLocation();
   const { data: settings } = useGetSettings();
   const { data: months } = useListMonths();
@@ -35,7 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   });
   
   const navItems = [
-    { href: "/", label: "Overview", icon: LayoutDashboard },
+    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
     { href: "/plan", label: "Budget Plan", icon: Calculator },
     { href: "/transactions", label: "Ledger", icon: ListOrdered },
     { href: "/import", label: "Import CSV", icon: Upload },
@@ -128,6 +132,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </nav>
         
         <div className="p-6 border-t border-white/5">
+          <div className="mb-3 flex items-center gap-3 px-1 text-white/70">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">{(user?.firstName ?? user?.primaryEmailAddress?.emailAddress ?? "L").slice(0, 1).toUpperCase()}</div>
+            <span className="min-w-0 flex-1 truncate text-sm">{user?.firstName ?? user?.primaryEmailAddress?.emailAddress}</span>
+            <button type="button" aria-label="Sign out" onClick={() => signOut({ redirectUrl: import.meta.env.BASE_URL })} className="rounded-lg p-2 text-white/50 hover:bg-white/10 hover:text-white"><LogOut size={16} /></button>
+          </div>
           <button 
             onClick={handleExport}
             className="flex w-full items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary/20 to-secondary/20 hover:from-primary/40 hover:to-secondary/40 border border-white/10 text-white rounded-xl transition-all duration-300 font-medium text-sm group shadow-[0_0_15px_rgba(0,0,0,0.2)] hover:shadow-[0_0_20px_rgba(138,43,226,0.4)]"

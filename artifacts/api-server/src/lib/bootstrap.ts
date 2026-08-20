@@ -10,7 +10,7 @@ import path from "node:path";
 import fs from "node:fs";
 // @ts-expect-error - xlsx-populate has no bundled types
 import XlsxPopulate from "xlsx-populate";
-import { sql, eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { ensureManualMirror } from "./mirror";
 import { budgetMonth } from "./budget";
 import {
@@ -39,6 +39,7 @@ async function ensureSchema(): Promise<void> {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS "settings" (
       "id" serial PRIMARY KEY,
+      "user_id" text,
       "selected_month" text NOT NULL DEFAULT 'August 2026',
       "month_start_day" integer NOT NULL DEFAULT 29,
       "checking_buffer" double precision NOT NULL DEFAULT 500,
@@ -46,6 +47,7 @@ async function ensureSchema(): Promise<void> {
     );
     CREATE TABLE IF NOT EXISTS "income_sources" (
       "id" serial PRIMARY KEY,
+      "user_id" text,
       "name" text NOT NULL,
       "owner" text NOT NULL DEFAULT 'Household',
       "frequency" text NOT NULL DEFAULT 'Monthly',
@@ -55,12 +57,14 @@ async function ensureSchema(): Promise<void> {
     );
     CREATE TABLE IF NOT EXISTS "categories" (
       "id" serial PRIMARY KEY,
+      "user_id" text,
       "name" text NOT NULL UNIQUE,
       "subcategories" text[] NOT NULL DEFAULT '{}',
       "sort_order" integer NOT NULL DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS "plan_lines" (
       "id" serial PRIMARY KEY,
+      "user_id" text,
       "month" text NOT NULL DEFAULT '',
       "category" text NOT NULL,
       "subcategory" text NOT NULL,
@@ -72,6 +76,7 @@ async function ensureSchema(): Promise<void> {
     );
     CREATE TABLE IF NOT EXISTS "transactions" (
       "id" serial PRIMARY KEY,
+      "user_id" text,
       "date" date NOT NULL,
       "description" text NOT NULL,
       "original_description" text,
@@ -94,6 +99,7 @@ async function ensureSchema(): Promise<void> {
     ALTER TABLE "transactions" ADD COLUMN IF NOT EXISTS "import_id" integer;
     CREATE TABLE IF NOT EXISTS "imports" (
       "id" serial PRIMARY KEY,
+      "user_id" text,
       "file_name" text,
       "account" text NOT NULL DEFAULT 'Checking',
       "total_rows" integer NOT NULL DEFAULT 0,
@@ -103,11 +109,28 @@ async function ensureSchema(): Promise<void> {
     );
     CREATE TABLE IF NOT EXISTS "rules" (
       "id" serial PRIMARY KEY,
+      "user_id" text,
       "pattern" text NOT NULL,
       "match_type" text NOT NULL DEFAULT 'description',
       "category" text NOT NULL,
       "subcategory" text NOT NULL
     );
+    ALTER TABLE "settings" ADD COLUMN IF NOT EXISTS "user_id" text;
+    ALTER TABLE "income_sources" ADD COLUMN IF NOT EXISTS "user_id" text;
+    ALTER TABLE "categories" ADD COLUMN IF NOT EXISTS "user_id" text;
+    ALTER TABLE "plan_lines" ADD COLUMN IF NOT EXISTS "user_id" text;
+    ALTER TABLE "transactions" ADD COLUMN IF NOT EXISTS "user_id" text;
+    ALTER TABLE "imports" ADD COLUMN IF NOT EXISTS "user_id" text;
+    ALTER TABLE "rules" ADD COLUMN IF NOT EXISTS "user_id" text;
+    ALTER TABLE "categories" DROP CONSTRAINT IF EXISTS "categories_name_unique";
+    CREATE UNIQUE INDEX IF NOT EXISTS "settings_user_id_unique"
+      ON "settings" ("user_id") WHERE "user_id" IS NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS "categories_user_name_unique"
+      ON "categories" ("user_id", "name") WHERE "user_id" IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS "transactions_user_id_idx" ON "transactions" ("user_id");
+    CREATE INDEX IF NOT EXISTS "imports_user_id_idx" ON "imports" ("user_id");
+    CREATE INDEX IF NOT EXISTS "plan_lines_user_id_idx" ON "plan_lines" ("user_id");
+    CREATE INDEX IF NOT EXISTS "rules_user_id_idx" ON "rules" ("user_id");
   `);
 }
 
@@ -163,24 +186,29 @@ async function migratePlanLineMonths(): Promise<void> {
  * only rows whose label changed are updated.
  */
 async function realignBudgetMonths(): Promise<void> {
-  const [s] = await db.select().from(settingsTable).limit(1);
-  if (!s) return;
-  const all = await db
-    .select({
-      id: transactionsTable.id,
-      date: transactionsTable.date,
-      month: transactionsTable.month,
-    })
-    .from(transactionsTable);
+  const settings = await db.select().from(settingsTable);
   let changed = 0;
-  for (const t of all) {
-    const month = budgetMonth(t.date, s.monthStartDay);
-    if (month !== t.month) {
-      await db
-        .update(transactionsTable)
-        .set({ month })
-        .where(eq(transactionsTable.id, t.id));
-      changed++;
+  for (const s of settings) {
+    const ownerClause = s.userId
+      ? eq(transactionsTable.userId, s.userId)
+      : isNull(transactionsTable.userId);
+    const all = await db
+      .select({
+        id: transactionsTable.id,
+        date: transactionsTable.date,
+        month: transactionsTable.month,
+      })
+      .from(transactionsTable)
+      .where(ownerClause);
+    for (const t of all) {
+      const month = budgetMonth(t.date, s.monthStartDay);
+      if (month !== t.month) {
+        await db
+          .update(transactionsTable)
+          .set({ month })
+          .where(and(eq(transactionsTable.id, t.id), ownerClause));
+        changed++;
+      }
     }
   }
   if (changed > 0)
@@ -371,13 +399,17 @@ async function backfillMirrorLinks(): Promise<void> {
       AND b."date" = m."date"
       AND b."amount" = m."amount"
       AND b."description" = m."description"
+      AND b."user_id" IS NOT DISTINCT FROM m."user_id"
       AND NOT EXISTS (
-        SELECT 1 FROM "transactions" m2 WHERE m2."linked_bank_id" = b.id
+        SELECT 1 FROM "transactions" m2
+        WHERE m2."linked_bank_id" = b.id
+          AND m2."user_id" IS NOT DISTINCT FROM b."user_id"
       )
       AND (
         SELECT COUNT(*) FROM "transactions" b2
         WHERE b2."source" = 'bank' AND b2."date" = m."date"
           AND b2."amount" = m."amount" AND b2."description" = m."description"
+          AND b2."user_id" IS NOT DISTINCT FROM m."user_id"
       ) = 1
   `);
   const linked = (result as unknown as { rowCount?: number }).rowCount ?? 0;
@@ -433,7 +465,10 @@ async function ensureMirrorsForBankExpenses(): Promise<void> {
   let repaired = 0;
   for (const b of bank) {
     if ((mirrorsByBank.get(b.id) ?? []).length > 0) continue;
-    await ensureManualMirror(b.id, {
+    // Unowned legacy rows are claimed by the first authenticated Ledger owner.
+    // Repair their mirrors on the next startup after that claim.
+    if (!b.userId) continue;
+    await ensureManualMirror(b.userId, b.id, {
       date: b.date,
       desc: b.description,
       orig: b.originalDescription ?? "",

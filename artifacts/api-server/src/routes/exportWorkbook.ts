@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import path from "node:path";
 import fs from "node:fs";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 // @ts-expect-error - xlsx-populate has no bundled types
 import XlsxPopulate from "xlsx-populate";
 import JSZip from "jszip";
@@ -13,6 +13,7 @@ import {
   rulesTable,
   transactionsTable,
 } from "@workspace/db";
+import { currentUserId } from "../middlewares/requireUser";
 
 const router: IRouter = Router();
 
@@ -28,21 +29,26 @@ function serialFromIso(iso: string): number {
 }
 
 router.get("/export", async (req, res): Promise<void> => {
-  const [settingsRow] = await db.select().from(settingsTable).limit(1);
+  const userId = currentUserId(req);
+  const [settingsRow] = await db
+    .select()
+    .from(settingsTable)
+    .where(eq(settingsTable.userId, userId))
+    .limit(1);
   const exportMonth = settingsRow?.selectedMonth ?? "";
   const [incomes, planLines, rules, txns] = await Promise.all([
-    db.select().from(incomeSourcesTable).orderBy(asc(incomeSourcesTable.id)),
+    db.select().from(incomeSourcesTable).where(eq(incomeSourcesTable.userId, userId)).orderBy(asc(incomeSourcesTable.id)),
     db
       .select()
       .from(planLinesTable)
-      .where(eq(planLinesTable.month, exportMonth))
+      .where(and(eq(planLinesTable.month, exportMonth), eq(planLinesTable.userId, userId)))
       .orderBy(asc(planLinesTable.id)),
     db
       .select()
       .from(rulesTable)
-      .where(eq(rulesTable.matchType, "description"))
+      .where(and(eq(rulesTable.matchType, "description"), eq(rulesTable.userId, userId)))
       .orderBy(asc(rulesTable.id)),
-    db.select().from(transactionsTable),
+    db.select().from(transactionsTable).where(eq(transactionsTable.userId, userId)),
   ]);
 
   const wb = await XlsxPopulate.fromFileAsync(TEMPLATE);

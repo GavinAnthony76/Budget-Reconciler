@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import {
   db,
   settingsTable,
@@ -49,32 +49,39 @@ import {
   stripNulls,
   budgetMonth,
 } from "../lib/budget";
+import { currentUserId } from "../middlewares/requireUser";
 
 const router: IRouter = Router();
 
-async function getOrCreateSettings() {
-  const [existing] = await db.select().from(settingsTable).limit(1);
+async function getOrCreateSettings(userId: string) {
+  const [existing] = await db
+    .select()
+    .from(settingsTable)
+    .where(eq(settingsTable.userId, userId))
+    .limit(1);
   if (existing) return existing;
-  const [created] = await db.insert(settingsTable).values({}).returning();
+  const [created] = await db.insert(settingsTable).values({ userId }).returning();
   return created;
 }
 
-router.get("/settings", async (_req, res): Promise<void> => {
-  const s = await getOrCreateSettings();
+router.get("/settings", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
+  const s = await getOrCreateSettings(userId);
   res.json(GetSettingsResponse.parse(s));
 });
 
 router.put("/settings", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const parsed = UpdateSettingsBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const s = await getOrCreateSettings();
+  const s = await getOrCreateSettings(userId);
   const [updated] = await db
     .update(settingsTable)
     .set(parsed.data)
-    .where(eq(settingsTable.id, s.id))
+    .where(and(eq(settingsTable.id, s.id), eq(settingsTable.userId, userId)))
     .returning();
   // Changing the pay-cycle start day reassigns every transaction's budget month
   if (
@@ -87,14 +94,15 @@ router.put("/settings", async (req, res): Promise<void> => {
         date: transactionsTable.date,
         month: transactionsTable.month,
       })
-      .from(transactionsTable);
+      .from(transactionsTable)
+      .where(eq(transactionsTable.userId, userId));
     for (const t of all) {
       const month = budgetMonth(t.date, updated.monthStartDay);
       if (month !== t.month) {
         await db
           .update(transactionsTable)
           .set({ month })
-          .where(eq(transactionsTable.id, t.id));
+          .where(and(eq(transactionsTable.id, t.id), eq(transactionsTable.userId, userId)));
       }
     }
   }
@@ -102,13 +110,16 @@ router.put("/settings", async (req, res): Promise<void> => {
 });
 
 router.get("/months", async (_req, res): Promise<void> => {
+  const userId = currentUserId(_req);
   const rows = await db
     .selectDistinct({ month: transactionsTable.month })
-    .from(transactionsTable);
-  const s = await getOrCreateSettings();
+    .from(transactionsTable)
+    .where(eq(transactionsTable.userId, userId));
+  const s = await getOrCreateSettings(userId);
   const planRows = await db
     .selectDistinct({ month: planLinesTable.month })
-    .from(planLinesTable);
+    .from(planLinesTable)
+    .where(eq(planLinesTable.userId, userId));
   const set = new Set(rows.map((r) => r.month));
   for (const r of planRows) if (r.month) set.add(r.month);
   set.add(s.selectedMonth);
@@ -120,15 +131,18 @@ router.get("/months", async (_req, res): Promise<void> => {
 });
 
 // ---- Income sources ----
-router.get("/incomes", async (_req, res): Promise<void> => {
+router.get("/incomes", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const rows = await db
     .select()
     .from(incomeSourcesTable)
+    .where(eq(incomeSourcesTable.userId, userId))
     .orderBy(asc(incomeSourcesTable.id));
   res.json(ListIncomesResponse.parse(rows));
 });
 
 router.post("/incomes", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const parsed = CreateIncomeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -139,6 +153,7 @@ router.post("/incomes", async (req, res): Promise<void> => {
     .insert(incomeSourcesTable)
     .values({
       ...data,
+      userId,
       name: parsed.data.name,
       netAmount: parsed.data.netAmount,
       monthlyEquivalent: data.monthlyEquivalent ?? data.netAmount,
@@ -148,6 +163,7 @@ router.post("/incomes", async (req, res): Promise<void> => {
 });
 
 router.patch("/incomes/:id", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const params = UpdateIncomeParams.safeParse(req.params);
   const parsed = UpdateIncomeBody.safeParse(req.body);
   if (!params.success || !parsed.success) {
@@ -157,7 +173,7 @@ router.patch("/incomes/:id", async (req, res): Promise<void> => {
   const [row] = await db
     .update(incomeSourcesTable)
     .set(stripNulls(parsed.data, ["notes"]))
-    .where(eq(incomeSourcesTable.id, params.data.id))
+    .where(and(eq(incomeSourcesTable.id, params.data.id), eq(incomeSourcesTable.userId, userId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Income source not found" });
@@ -167,6 +183,7 @@ router.patch("/incomes/:id", async (req, res): Promise<void> => {
 });
 
 router.delete("/incomes/:id", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const params = DeleteIncomeParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -174,7 +191,7 @@ router.delete("/incomes/:id", async (req, res): Promise<void> => {
   }
   const [row] = await db
     .delete(incomeSourcesTable)
-    .where(eq(incomeSourcesTable.id, params.data.id))
+    .where(and(eq(incomeSourcesTable.id, params.data.id), eq(incomeSourcesTable.userId, userId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Income source not found" });
@@ -184,15 +201,18 @@ router.delete("/incomes/:id", async (req, res): Promise<void> => {
 });
 
 // ---- Categories ----
-router.get("/categories", async (_req, res): Promise<void> => {
+router.get("/categories", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const rows = await db
     .select()
     .from(categoriesTable)
+    .where(eq(categoriesTable.userId, userId))
     .orderBy(asc(categoriesTable.sortOrder), asc(categoriesTable.id));
   res.json(ListCategoriesResponse.parse(rows));
 });
 
 router.post("/categories", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const parsed = CreateCategoryBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -200,12 +220,13 @@ router.post("/categories", async (req, res): Promise<void> => {
   }
   const [row] = await db
     .insert(categoriesTable)
-    .values(parsed.data)
+    .values({ ...parsed.data, userId })
     .returning();
   res.status(201).json(CreateCategoryResponse.parse(row));
 });
 
 router.patch("/categories/:id", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const params = UpdateCategoryParams.safeParse(req.params);
   const parsed = UpdateCategoryBody.safeParse(req.body);
   if (!params.success || !parsed.success) {
@@ -215,7 +236,7 @@ router.patch("/categories/:id", async (req, res): Promise<void> => {
   const [row] = await db
     .update(categoriesTable)
     .set(parsed.data)
-    .where(eq(categoriesTable.id, params.data.id))
+    .where(and(eq(categoriesTable.id, params.data.id), eq(categoriesTable.userId, userId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Category not found" });
@@ -225,6 +246,7 @@ router.patch("/categories/:id", async (req, res): Promise<void> => {
 });
 
 router.delete("/categories/:id", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const params = DeleteCategoryParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -232,7 +254,7 @@ router.delete("/categories/:id", async (req, res): Promise<void> => {
   }
   const [row] = await db
     .delete(categoriesTable)
-    .where(eq(categoriesTable.id, params.data.id))
+    .where(and(eq(categoriesTable.id, params.data.id), eq(categoriesTable.userId, userId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Category not found" });
@@ -243,33 +265,36 @@ router.delete("/categories/:id", async (req, res): Promise<void> => {
 
 // ---- Plan lines (per budget month) ----
 router.get("/plan", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const q = ListPlanLinesQueryParams.safeParse(req.query);
   if (!q.success) {
     res.status(400).json({ error: q.error.message });
     return;
   }
-  const s = await getOrCreateSettings();
+  const s = await getOrCreateSettings(userId);
   const month = q.data.month ?? s.selectedMonth;
   const rows = await db
     .select()
     .from(planLinesTable)
-    .where(eq(planLinesTable.month, month))
+    .where(and(eq(planLinesTable.month, month), eq(planLinesTable.userId, userId)))
     .orderBy(asc(planLinesTable.id));
   res.json(ListPlanLinesResponse.parse(rows));
 });
 
 router.post("/plan", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const parsed = CreatePlanLineBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const s = await getOrCreateSettings();
+  const s = await getOrCreateSettings(userId);
   const data = stripNulls(parsed.data, ["dueDay", "notes"]);
   const [row] = await db
     .insert(planLinesTable)
     .values({
       ...data,
+      userId,
       month: parsed.data.month ?? s.selectedMonth,
       category: parsed.data.category,
       subcategory: parsed.data.subcategory,
@@ -280,6 +305,7 @@ router.post("/plan", async (req, res): Promise<void> => {
 });
 
 router.post("/plan/copy", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const parsed = CopyPlanBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -294,12 +320,12 @@ router.post("/plan/copy", async (req, res): Promise<void> => {
   // empty-target check: advisory xact lock + recheck inside the transaction.
   const outcome = await db.transaction(async (tx) => {
     await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${"plan_copy:" + to}))`,
+      sql`SELECT pg_advisory_xact_lock(hashtext(${"plan_copy:" + userId + ":" + to}))`,
     );
     const source = await tx
       .select()
       .from(planLinesTable)
-      .where(eq(planLinesTable.month, from))
+      .where(and(eq(planLinesTable.month, from), eq(planLinesTable.userId, userId)))
       .orderBy(asc(planLinesTable.id));
     if (source.length === 0) {
       return { status: 404 as const, error: `No plan lines found for ${from}` };
@@ -307,14 +333,14 @@ router.post("/plan/copy", async (req, res): Promise<void> => {
     const existing = await tx
       .select({ id: planLinesTable.id })
       .from(planLinesTable)
-      .where(eq(planLinesTable.month, to))
+      .where(and(eq(planLinesTable.month, to), eq(planLinesTable.userId, userId)))
       .limit(1);
     if (existing.length > 0) {
       return { status: 409 as const, error: `${to} already has a budget plan` };
     }
     const rows = await tx
       .insert(planLinesTable)
-      .values(source.map(({ id: _id, ...line }) => ({ ...line, month: to })))
+      .values(source.map(({ id: _id, userId: _owner, ...line }) => ({ ...line, userId, month: to })))
       .returning();
     return { status: 201 as const, rows };
   });
@@ -326,6 +352,7 @@ router.post("/plan/copy", async (req, res): Promise<void> => {
 });
 
 router.patch("/plan/:id", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const params = UpdatePlanLineParams.safeParse(req.params);
   const parsed = UpdatePlanLineBody.safeParse(req.body);
   if (!params.success || !parsed.success) {
@@ -335,7 +362,7 @@ router.patch("/plan/:id", async (req, res): Promise<void> => {
   const [row] = await db
     .update(planLinesTable)
     .set(stripNulls(parsed.data, ["dueDay", "notes"]))
-    .where(eq(planLinesTable.id, params.data.id))
+    .where(and(eq(planLinesTable.id, params.data.id), eq(planLinesTable.userId, userId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Plan line not found" });
@@ -345,6 +372,7 @@ router.patch("/plan/:id", async (req, res): Promise<void> => {
 });
 
 router.delete("/plan/:id", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const params = DeletePlanLineParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -352,7 +380,7 @@ router.delete("/plan/:id", async (req, res): Promise<void> => {
   }
   const [row] = await db
     .delete(planLinesTable)
-    .where(eq(planLinesTable.id, params.data.id))
+    .where(and(eq(planLinesTable.id, params.data.id), eq(planLinesTable.userId, userId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Plan line not found" });
@@ -362,16 +390,18 @@ router.delete("/plan/:id", async (req, res): Promise<void> => {
 });
 
 // ---- Merchant rules (description rules only are exposed) ----
-router.get("/rules", async (_req, res): Promise<void> => {
+router.get("/rules", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const rows = await db
     .select()
     .from(rulesTable)
-    .where(eq(rulesTable.matchType, "description"))
+    .where(and(eq(rulesTable.matchType, "description"), eq(rulesTable.userId, userId)))
     .orderBy(asc(rulesTable.id));
   res.json(ListRulesResponse.parse(rows));
 });
 
 router.post("/rules", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const parsed = CreateRuleBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -379,13 +409,14 @@ router.post("/rules", async (req, res): Promise<void> => {
   }
   const [row] = await db
     .insert(rulesTable)
-    .values({ ...parsed.data, matchType: "description" })
+    .values({ ...parsed.data, userId, matchType: "description" })
     .returning();
-  await applyRuleRetroactively(parsed.data);
+  await applyRuleRetroactively(userId, parsed.data);
   res.status(201).json(CreateRuleResponse.parse(row));
 });
 
 router.delete("/rules/:id", async (req, res): Promise<void> => {
+  const userId = currentUserId(req);
   const params = DeleteRuleParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -393,7 +424,7 @@ router.delete("/rules/:id", async (req, res): Promise<void> => {
   }
   const [row] = await db
     .delete(rulesTable)
-    .where(eq(rulesTable.id, params.data.id))
+    .where(and(eq(rulesTable.id, params.data.id), eq(rulesTable.userId, userId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Rule not found" });
