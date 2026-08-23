@@ -1,12 +1,19 @@
-<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="128" height="128" rx="32" fill="url(#paint0_linear)"/>
-  <path d="M38 43H90M38 64H78M38 85H66" stroke="white" stroke-width="10" stroke-linecap="round"/>
-  <circle cx="89" cy="84" r="13" fill="#34E7D5"/>
-  <path d="M83 84L87 88L95 79" stroke="#111124" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<svg width="128" height="128" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="paint0_linear" x1="18" y1="10" x2="116" y2="123" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#A855F7"/>
-      <stop offset="1" stop-color="#19D3C5"/>
+    <linearGradient id="ledger-mark-bg" x1="11" y1="7" x2="55" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#132C3A"/>
+      <stop offset="1" stop-color="#081B2A"/>
+    </linearGradient>
+    <linearGradient id="ledger-mark-mint" x1="18" y1="16" x2="49" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9AF4D7"/>
+      <stop offset="1" stop-color="#62E6C3"/>
     </linearGradient>
   </defs>
+  <rect x="1" y="1" width="62" height="62" rx="18" fill="url(#ledger-mark-bg)"/>
+  <rect x="1" y="1" width="62" height="62" rx="18" stroke="#62E6C3" stroke-opacity=".22"/>
+  <path d="M48.5 18.5A22 22 0 1 1 18.7 48" stroke="#8178F8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8 5" opacity=".9"/>
+  <circle cx="48.5" cy="18.5" r="3.5" fill="#F6C667"/>
+  <path d="M19 17.5V40a7 7 0 0 0 7 7h18" stroke="#F7FFFC" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M25 18h20M25 27h14M25 36h8" stroke="url(#ledger-mark-mint)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="m37 39.5 3.5 3.5L49 33" stroke="#F7FFFC" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

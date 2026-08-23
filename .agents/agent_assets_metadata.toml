@@ -7,3 +7,18 @@ uri = "file://exports/KJA_Budget_Fixed.xlsx"
 type = "table"
 title = "Fixed Budget Workbook (KJA)"
 description = "Repaired workbook with bank CSV imported: transactions auto-categorized via the new Rules sheet, Manual Actuals populated, pay-cycle month logic fixed (Setup!B9), and reconciliation aligned."
+logical_id = "541cf567-8b02-4f91-8137-da0585f6be35"
+
+[[outputs]]
+id = "Lf4EYKIH4CWNioc73wgFT"
+uri = "file://artifacts/budget-app/public/logo.svg"
+type = "image"
+title = "Ledger Loop app icon"
+description = "Standalone SVG app icon for Ledger, using the Ledger Mint, Ledger Iris, Ledger Gold, and Deep Ink brand palette."
+logical_id = "b0e9aec0-ce5d-4b3f-bc2b-b548e5b48c4d"
+content_hash = "sha256:96a204abd0b5e141ca1018aee70f6793a8ef1b590af4a8e34b049574f9275794"
+size = 1242
+mtime_ms = 1787510915373
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:36eee2a6-4b47-4582-8522-692fa1ffffaf/b0e9aec0-ce5d-4b3f-bc2b-b548e5b48c4d/30d6a62b-9e0e-4f2b-9575-9dc716e13a8c"
+storage_version_token = "1787511000413166"
+content_type = "image/svg+xml"

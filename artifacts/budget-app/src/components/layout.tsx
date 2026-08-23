@@ -7,7 +7,6 @@ import {
   CheckSquare, 
   Settings, 
   Download,
-  Command,
   Menu,
   X,
   LogOut
@@ -17,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useClerk, useUser } from "@clerk/react";
 import { useToast } from "@/hooks/use-toast";
+import { BrandMark } from "@/components/brand-mark";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { signOut } = useClerk();
@@ -89,7 +89,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-xl border-b border-white/10 z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-2 text-primary font-display font-bold text-xl">
-          <Command size={24} className="text-accent" />
+          <BrandMark size={28} />
           Ledger
         </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-white/80 hover:text-white">
@@ -104,8 +104,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="h-16 md:h-24 p-6 flex items-center gap-3 border-b border-white/5">
-          <div className="h-10 w-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center text-white shadow-[0_0_15px_rgba(28,216,210,0.5)]">
-            <Command size={22} />
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(98,230,195,0.28)]">
+            <BrandMark size={40} />
           </div>
           <span className="font-display text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">Ledger</span>
         </div>

@@ -52,12 +52,12 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: '#b65cff',
+    colorPrimary: '#62E6C3',
     colorForeground: '#ffffff',
     colorMutedForeground: '#b8b8d1',
     colorDanger: '#ff5f70',
-    colorBackground: '#17172a',
-    colorInput: '#24243b',
+    colorBackground: '#0D202C',
+    colorInput: '#17303D',
     colorInputForeground: '#ffffff',
     colorNeutral: '#3d3d59',
     fontFamily: 'Plus Jakarta Sans, sans-serif',
@@ -72,17 +72,17 @@ const clerkAppearance = {
     headerSubtitle: 'text-white/65',
     socialButtonsBlockButtonText: 'text-white',
     formFieldLabel: 'text-white/80',
-    footerActionLink: 'text-[#c980ff]',
+    footerActionLink: 'text-[#9AF4D7]',
     footerActionText: 'text-white/60',
     dividerText: 'text-white/45',
-    identityPreviewEditButton: 'text-[#c980ff]',
+    identityPreviewEditButton: 'text-[#9AF4D7]',
     formFieldSuccessText: 'text-emerald-300',
     alertText: 'text-white',
     logoBox: 'mb-3',
     logoImage: 'h-12 w-12',
     socialButtonsBlockButton: 'bg-white/5 border-white/10 hover:bg-white/10',
-    formButtonPrimary: 'bg-gradient-to-r from-[#a855f7] to-[#19d3c5] hover:opacity-95',
-    formFieldInput: 'bg-[#24243b] border-white/10 text-white',
+    formButtonPrimary: 'bg-gradient-to-r from-[#62E6C3] to-[#8178F8] text-[#081B2A] hover:opacity-95',
+    formFieldInput: 'bg-[#17303D] border-white/10 text-white',
     footerAction: 'bg-black/20',
     dividerLine: 'bg-white/10',
     alert: 'bg-red-500/10 border-red-400/25',
@@ -98,7 +98,7 @@ function Welcome() {
       <div className="absolute -top-32 -left-20 h-96 w-96 rounded-full bg-primary/25 blur-[120px]" />
       <div className="absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-accent/20 blur-[120px]" />
       <section className="glass-panel relative w-full max-w-xl p-8 sm:p-12 rounded-3xl border border-white/10 text-center shadow-2xl">
-        <img src={`${basePath}/logo.svg`} alt="" className="mx-auto h-16 w-16 mb-7 drop-shadow-[0_0_25px_rgba(168,85,247,0.55)]" />
+         <img src={`${basePath}/logo.svg`} alt="Ledger" className="mx-auto h-16 w-16 mb-7 drop-shadow-[0_0_25px_rgba(98,230,195,0.35)]" />
         <p className="text-primary font-mono text-xs uppercase tracking-[0.25em] mb-4">Private household finance</p>
         <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight">Your money, clearly organized.</h1>
         <p className="mt-5 text-white/65 leading-7">Ledger keeps your budget, spending plan, and transaction history private and ready for you.</p>
