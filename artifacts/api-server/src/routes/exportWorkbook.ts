@@ -194,8 +194,16 @@ router.get("/export", async (req, res): Promise<void> => {
   const zip = await JSZip.loadAsync(buf);
   let wbXml = await zip.file("xl/workbook.xml")!.async("string");
   wbXml = wbXml.replace(/<definedName name="ColumnTitle1"[^>]*>[^<]*<\/definedName>/, "");
-  if (/<calcPr[^>]*\/>/.test(wbXml)) wbXml = wbXml.replace(/<calcPr([^>]*)\/>/, '<calcPr$1 fullCalcOnLoad="1"/>');
-  else wbXml = wbXml.replace("</workbook>", '<calcPr fullCalcOnLoad="1"/></workbook>');
+  // xlsx-populate preserves the template's calculation settings. Only add
+  // fullCalcOnLoad when it is absent; duplicating the XML attribute makes an
+  // otherwise valid ZIP unreadable in Excel.
+  if (!/<calcPr\b[^>]*\bfullCalcOnLoad=/.test(wbXml)) {
+    if (/<calcPr[^>]*\/>/.test(wbXml)) {
+      wbXml = wbXml.replace(/<calcPr([^>]*)\/>/, '<calcPr$1 fullCalcOnLoad="1"/>');
+    } else {
+      wbXml = wbXml.replace("</workbook>", '<calcPr fullCalcOnLoad="1"/></workbook>');
+    }
+  }
   zip.file("xl/workbook.xml", wbXml);
   zip.remove("xl/calcChain.xml");
   let ct = await zip.file("[Content_Types].xml")!.async("string");

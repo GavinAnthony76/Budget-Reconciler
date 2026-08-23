@@ -66,7 +66,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      URL.revokeObjectURL(url);
+      // Let the browser begin writing the blob before releasing it.
+      window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
     } catch (error) {
       toast({
         title: "Could not export workbook",
