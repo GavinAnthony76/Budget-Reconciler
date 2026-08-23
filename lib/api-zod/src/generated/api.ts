@@ -534,6 +534,472 @@ export const DeleteRuleResponse = zod.void()
 
 
 /**
+ * @summary Get investment accounts, holdings, goals, allocations, and activity
+ */
+export const GetInvestmentOverviewResponse = zod.object({
+  "summary": zod.object({
+  "portfolioValue": zod.number(),
+  "monthlyContribution": zod.number(),
+  "netContributions": zod.number(),
+  "investmentGrowth": zod.number(),
+  "goalProgress": zod.number()
+}),
+  "accounts": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "institution": zod.string(),
+  "accountType": zod.string(),
+  "cashBalance": zod.number(),
+  "source": zod.string()
+})),
+  "holdings": zod.array(zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "securityId": zod.number(),
+  "ticker": zod.string(),
+  "securityName": zod.string(),
+  "shares": zod.number(),
+  "averageCost": zod.number(),
+  "costBasis": zod.number(),
+  "currentPrice": zod.number(),
+  "currentMarketValue": zod.number(),
+  "unrealizedGainLoss": zod.number(),
+  "unrealizedGainLossPercent": zod.number(),
+  "portfolioAllocationPercent": zod.number()
+})),
+  "transactions": zod.array(zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "securityId": zod.number().nullish(),
+  "ticker": zod.string().nullish(),
+  "date": zod.string(),
+  "month": zod.string(),
+  "transactionType": zod.enum(['deposit', 'withdrawal', 'buy', 'sell', 'dividend', 'dividend_reinvestment', 'fee']),
+  "amount": zod.number(),
+  "shares": zod.number().nullish(),
+  "price": zod.number().nullish(),
+  "notes": zod.string().nullish()
+})),
+  "goals": zod.array(zod.object({
+  "id": zod.number(),
+  "accountId": zod.number().nullish(),
+  "name": zod.string(),
+  "targetAmount": zod.number(),
+  "monthlyPlannedContribution": zod.number(),
+  "targetDate": zod.string(),
+  "currentPortfolioValue": zod.number(),
+  "contributionsToDate": zod.number(),
+  "investmentGrowth": zod.number(),
+  "remainingAmount": zod.number(),
+  "percentComplete": zod.number(),
+  "monthlyContributionProgress": zod.number()
+})),
+  "allocations": zod.array(zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "securityId": zod.number(),
+  "ticker": zod.string(),
+  "securityName": zod.string(),
+  "monthlyAmount": zod.number()
+}))
+})
+
+
+/**
+ * @summary Create an investment account
+ */
+
+
+
+
+
+export const CreateInvestmentAccountBody = zod.object({
+  "name": zod.string().min(1),
+  "institution": zod.string().min(1),
+  "accountType": zod.string().min(1),
+  "cashBalance": zod.number()
+})
+
+export const CreateInvestmentAccountResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "institution": zod.string(),
+  "accountType": zod.string(),
+  "cashBalance": zod.number(),
+  "source": zod.string()
+})
+
+
+/**
+ * @summary Update an investment account
+ */
+export const UpdateInvestmentAccountParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+
+
+
+
+
+export const UpdateInvestmentAccountBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "institution": zod.string().min(1).optional(),
+  "accountType": zod.string().min(1).optional(),
+  "cashBalance": zod.number().optional()
+})
+
+export const UpdateInvestmentAccountResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "institution": zod.string(),
+  "accountType": zod.string(),
+  "cashBalance": zod.number(),
+  "source": zod.string()
+})
+
+
+/**
+ * @summary Delete an empty investment account
+ */
+export const DeleteInvestmentAccountParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteInvestmentAccountResponse = zod.void()
+
+
+/**
+ * @summary Create a manual holding
+ */
+
+
+export const createInvestmentHoldingBodySharesMin = 0;
+
+export const createInvestmentHoldingBodyAverageCostMin = 0;
+
+export const createInvestmentHoldingBodyCurrentPriceMin = 0;
+
+
+
+export const CreateInvestmentHoldingBody = zod.object({
+  "accountId": zod.number(),
+  "ticker": zod.string().min(1),
+  "securityName": zod.string().min(1),
+  "shares": zod.number().min(createInvestmentHoldingBodySharesMin),
+  "averageCost": zod.number().min(createInvestmentHoldingBodyAverageCostMin),
+  "currentPrice": zod.number().min(createInvestmentHoldingBodyCurrentPriceMin)
+})
+
+export const CreateInvestmentHoldingResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "securityId": zod.number(),
+  "ticker": zod.string(),
+  "securityName": zod.string(),
+  "shares": zod.number(),
+  "averageCost": zod.number(),
+  "costBasis": zod.number(),
+  "currentPrice": zod.number(),
+  "currentMarketValue": zod.number(),
+  "unrealizedGainLoss": zod.number(),
+  "unrealizedGainLossPercent": zod.number(),
+  "portfolioAllocationPercent": zod.number()
+})
+
+
+/**
+ * @summary Update a manual holding
+ */
+export const UpdateInvestmentHoldingParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+
+
+export const updateInvestmentHoldingBodySharesMin = 0;
+
+export const updateInvestmentHoldingBodyAverageCostMin = 0;
+
+export const updateInvestmentHoldingBodyCurrentPriceMin = 0;
+
+
+
+export const UpdateInvestmentHoldingBody = zod.object({
+  "ticker": zod.string().min(1).optional(),
+  "securityName": zod.string().min(1).optional(),
+  "shares": zod.number().min(updateInvestmentHoldingBodySharesMin).optional(),
+  "averageCost": zod.number().min(updateInvestmentHoldingBodyAverageCostMin).optional(),
+  "currentPrice": zod.number().min(updateInvestmentHoldingBodyCurrentPriceMin).optional()
+})
+
+export const UpdateInvestmentHoldingResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "securityId": zod.number(),
+  "ticker": zod.string(),
+  "securityName": zod.string(),
+  "shares": zod.number(),
+  "averageCost": zod.number(),
+  "costBasis": zod.number(),
+  "currentPrice": zod.number(),
+  "currentMarketValue": zod.number(),
+  "unrealizedGainLoss": zod.number(),
+  "unrealizedGainLossPercent": zod.number(),
+  "portfolioAllocationPercent": zod.number()
+})
+
+
+/**
+ * @summary Delete a holding
+ */
+export const DeleteInvestmentHoldingParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteInvestmentHoldingResponse = zod.void()
+
+
+/**
+ * @summary Add a manual investment transaction
+ */
+export const createInvestmentTransactionBodyAmountMin = 0;
+
+export const createInvestmentTransactionBodySharesMin = 0;
+
+export const createInvestmentTransactionBodyPriceMin = 0;
+
+
+
+export const CreateInvestmentTransactionBody = zod.object({
+  "accountId": zod.number(),
+  "securityId": zod.number().nullish(),
+  "date": zod.string(),
+  "transactionType": zod.enum(['deposit', 'withdrawal', 'buy', 'sell', 'dividend', 'dividend_reinvestment', 'fee']),
+  "amount": zod.number().min(createInvestmentTransactionBodyAmountMin),
+  "shares": zod.number().min(createInvestmentTransactionBodySharesMin).nullish(),
+  "price": zod.number().min(createInvestmentTransactionBodyPriceMin).nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const CreateInvestmentTransactionResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "securityId": zod.number().nullish(),
+  "ticker": zod.string().nullish(),
+  "date": zod.string(),
+  "month": zod.string(),
+  "transactionType": zod.enum(['deposit', 'withdrawal', 'buy', 'sell', 'dividend', 'dividend_reinvestment', 'fee']),
+  "amount": zod.number(),
+  "shares": zod.number().nullish(),
+  "price": zod.number().nullish(),
+  "notes": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update a manual investment transaction
+ */
+export const UpdateInvestmentTransactionParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const updateInvestmentTransactionBodyAmountMin = 0;
+
+export const updateInvestmentTransactionBodySharesMin = 0;
+
+export const updateInvestmentTransactionBodyPriceMin = 0;
+
+
+
+export const UpdateInvestmentTransactionBody = zod.object({
+  "accountId": zod.number().optional(),
+  "securityId": zod.number().nullish(),
+  "date": zod.string().optional(),
+  "transactionType": zod.enum(['deposit', 'withdrawal', 'buy', 'sell', 'dividend', 'dividend_reinvestment', 'fee']).optional(),
+  "amount": zod.number().min(updateInvestmentTransactionBodyAmountMin).optional(),
+  "shares": zod.number().min(updateInvestmentTransactionBodySharesMin).nullish(),
+  "price": zod.number().min(updateInvestmentTransactionBodyPriceMin).nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const UpdateInvestmentTransactionResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "securityId": zod.number().nullish(),
+  "ticker": zod.string().nullish(),
+  "date": zod.string(),
+  "month": zod.string(),
+  "transactionType": zod.enum(['deposit', 'withdrawal', 'buy', 'sell', 'dividend', 'dividend_reinvestment', 'fee']),
+  "amount": zod.number(),
+  "shares": zod.number().nullish(),
+  "price": zod.number().nullish(),
+  "notes": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete a manual investment transaction
+ */
+export const DeleteInvestmentTransactionParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteInvestmentTransactionResponse = zod.void()
+
+
+/**
+ * @summary Create an investment goal
+ */
+
+export const createInvestmentGoalBodyTargetAmountMin = 0;
+
+export const createInvestmentGoalBodyMonthlyPlannedContributionMin = 0;
+
+
+
+export const CreateInvestmentGoalBody = zod.object({
+  "accountId": zod.number().nullish(),
+  "name": zod.string().min(1),
+  "targetAmount": zod.number().min(createInvestmentGoalBodyTargetAmountMin),
+  "monthlyPlannedContribution": zod.number().min(createInvestmentGoalBodyMonthlyPlannedContributionMin),
+  "targetDate": zod.string()
+})
+
+export const CreateInvestmentGoalResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number().nullish(),
+  "name": zod.string(),
+  "targetAmount": zod.number(),
+  "monthlyPlannedContribution": zod.number(),
+  "targetDate": zod.string(),
+  "currentPortfolioValue": zod.number(),
+  "contributionsToDate": zod.number(),
+  "investmentGrowth": zod.number(),
+  "remainingAmount": zod.number(),
+  "percentComplete": zod.number(),
+  "monthlyContributionProgress": zod.number()
+})
+
+
+/**
+ * @summary Update an investment goal
+ */
+export const UpdateInvestmentGoalParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+
+export const updateInvestmentGoalBodyTargetAmountMin = 0;
+
+export const updateInvestmentGoalBodyMonthlyPlannedContributionMin = 0;
+
+
+
+export const UpdateInvestmentGoalBody = zod.object({
+  "accountId": zod.number().nullish(),
+  "name": zod.string().min(1).optional(),
+  "targetAmount": zod.number().min(updateInvestmentGoalBodyTargetAmountMin).optional(),
+  "monthlyPlannedContribution": zod.number().min(updateInvestmentGoalBodyMonthlyPlannedContributionMin).optional(),
+  "targetDate": zod.string().optional()
+})
+
+export const UpdateInvestmentGoalResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number().nullish(),
+  "name": zod.string(),
+  "targetAmount": zod.number(),
+  "monthlyPlannedContribution": zod.number(),
+  "targetDate": zod.string(),
+  "currentPortfolioValue": zod.number(),
+  "contributionsToDate": zod.number(),
+  "investmentGrowth": zod.number(),
+  "remainingAmount": zod.number(),
+  "percentComplete": zod.number(),
+  "monthlyContributionProgress": zod.number()
+})
+
+
+/**
+ * @summary Delete an investment goal
+ */
+export const DeleteInvestmentGoalParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteInvestmentGoalResponse = zod.void()
+
+
+/**
+ * @summary Create an investment target allocation
+ */
+
+
+export const createInvestmentTargetAllocationBodyMonthlyAmountMin = 0;
+
+
+
+export const CreateInvestmentTargetAllocationBody = zod.object({
+  "accountId": zod.number(),
+  "ticker": zod.string().min(1),
+  "securityName": zod.string().min(1),
+  "monthlyAmount": zod.number().min(createInvestmentTargetAllocationBodyMonthlyAmountMin)
+})
+
+export const CreateInvestmentTargetAllocationResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "securityId": zod.number(),
+  "ticker": zod.string(),
+  "securityName": zod.string(),
+  "monthlyAmount": zod.number()
+})
+
+
+/**
+ * @summary Update an investment target allocation
+ */
+export const UpdateInvestmentTargetAllocationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const updateInvestmentTargetAllocationBodyMonthlyAmountMin = 0;
+
+
+
+export const UpdateInvestmentTargetAllocationBody = zod.object({
+  "monthlyAmount": zod.number().min(updateInvestmentTargetAllocationBodyMonthlyAmountMin).optional()
+})
+
+export const UpdateInvestmentTargetAllocationResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "securityId": zod.number(),
+  "ticker": zod.string(),
+  "securityName": zod.string(),
+  "monthlyAmount": zod.number()
+})
+
+
+/**
+ * @summary Delete an investment target allocation
+ */
+export const DeleteInvestmentTargetAllocationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteInvestmentTargetAllocationResponse = zod.void()
+
+
+/**
+ * @summary Sync the current and next budget cycles to the investment allocation plan
+ */
+export const SyncInvestmentContributionPlanResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
  * @summary Dashboard summary for a budget month
  */
 export const GetDashboardQueryParams = zod.object({
@@ -555,7 +1021,14 @@ export const GetDashboardResponse = zod.object({
   "planned": zod.number(),
   "actual": zod.number(),
   "remaining": zod.number()
-}))
+})),
+  "investment": zod.object({
+  "portfolioValue": zod.number(),
+  "monthlyContribution": zod.number(),
+  "netContributions": zod.number(),
+  "investmentGrowth": zod.number(),
+  "goalProgress": zod.number()
+})
 })
 
 

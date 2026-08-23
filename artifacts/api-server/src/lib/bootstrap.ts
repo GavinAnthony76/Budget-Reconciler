@@ -115,6 +115,75 @@ async function ensureSchema(): Promise<void> {
       "category" text NOT NULL,
       "subcategory" text NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS "investment_accounts" (
+      "id" serial PRIMARY KEY,
+      "user_id" text NOT NULL,
+      "name" text NOT NULL,
+      "institution" text NOT NULL,
+      "account_type" text NOT NULL,
+      "cash_balance" double precision NOT NULL DEFAULT 0,
+      "source" text NOT NULL DEFAULT 'manual',
+      "provider_account_id" text,
+      "created_at" timestamp with time zone NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS "investment_securities" (
+      "id" serial PRIMARY KEY,
+      "user_id" text NOT NULL,
+      "ticker" text NOT NULL,
+      "security_name" text NOT NULL,
+      "source" text NOT NULL DEFAULT 'manual',
+      "provider_security_id" text
+    );
+    CREATE TABLE IF NOT EXISTS "investment_holdings" (
+      "id" serial PRIMARY KEY,
+      "user_id" text NOT NULL,
+      "account_id" integer NOT NULL,
+      "security_id" integer NOT NULL,
+      "shares" double precision NOT NULL DEFAULT 0,
+      "average_cost" double precision NOT NULL DEFAULT 0,
+      "current_price" double precision NOT NULL DEFAULT 0,
+      "source" text NOT NULL DEFAULT 'manual',
+      "provider_holding_id" text,
+      "updated_at" timestamp with time zone NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS "investment_transactions" (
+      "id" serial PRIMARY KEY,
+      "user_id" text NOT NULL,
+      "account_id" integer NOT NULL,
+      "security_id" integer,
+      "date" date NOT NULL,
+      "month" text NOT NULL,
+      "transaction_type" text NOT NULL,
+      "amount" double precision NOT NULL DEFAULT 0,
+      "shares" double precision,
+      "price" double precision,
+      "notes" text,
+      "source" text NOT NULL DEFAULT 'manual',
+      "provider_transaction_id" text,
+      "linked_household_transaction_id" integer,
+      "created_at" timestamp with time zone NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS "investment_setup" (
+      "user_id" text PRIMARY KEY,
+      "initialized_at" timestamp with time zone NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS "investment_goals" (
+      "id" serial PRIMARY KEY,
+      "user_id" text NOT NULL,
+      "account_id" integer,
+      "name" text NOT NULL,
+      "target_amount" double precision NOT NULL,
+      "monthly_planned_contribution" double precision NOT NULL,
+      "target_date" date NOT NULL,
+      "created_at" timestamp with time zone NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS "investment_target_allocations" (
+      "id" serial PRIMARY KEY,
+      "user_id" text NOT NULL,
+      "account_id" integer NOT NULL,
+      "security_id" integer NOT NULL,
+      "monthly_amount" double precision NOT NULL DEFAULT 0
+    );
     ALTER TABLE "settings" ADD COLUMN IF NOT EXISTS "user_id" text;
     ALTER TABLE "income_sources" ADD COLUMN IF NOT EXISTS "user_id" text;
     ALTER TABLE "categories" ADD COLUMN IF NOT EXISTS "user_id" text;
@@ -122,7 +191,10 @@ async function ensureSchema(): Promise<void> {
     ALTER TABLE "transactions" ADD COLUMN IF NOT EXISTS "user_id" text;
     ALTER TABLE "imports" ADD COLUMN IF NOT EXISTS "user_id" text;
     ALTER TABLE "rules" ADD COLUMN IF NOT EXISTS "user_id" text;
+    ALTER TABLE "investment_transactions" ADD COLUMN IF NOT EXISTS "linked_household_transaction_id" integer;
     ALTER TABLE "categories" DROP CONSTRAINT IF EXISTS "categories_name_unique";
+    ALTER TABLE "categories" DROP CONSTRAINT IF EXISTS "categories_name_key";
+    DROP INDEX IF EXISTS "categories_name_unique";
     CREATE UNIQUE INDEX IF NOT EXISTS "settings_user_id_unique"
       ON "settings" ("user_id") WHERE "user_id" IS NOT NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS "categories_user_name_unique"
@@ -131,6 +203,12 @@ async function ensureSchema(): Promise<void> {
     CREATE INDEX IF NOT EXISTS "imports_user_id_idx" ON "imports" ("user_id");
     CREATE INDEX IF NOT EXISTS "plan_lines_user_id_idx" ON "plan_lines" ("user_id");
     CREATE INDEX IF NOT EXISTS "rules_user_id_idx" ON "rules" ("user_id");
+    CREATE INDEX IF NOT EXISTS "investment_accounts_user_id_idx" ON "investment_accounts" ("user_id");
+    CREATE INDEX IF NOT EXISTS "investment_securities_user_id_idx" ON "investment_securities" ("user_id");
+    CREATE INDEX IF NOT EXISTS "investment_holdings_user_id_idx" ON "investment_holdings" ("user_id");
+    CREATE INDEX IF NOT EXISTS "investment_transactions_user_month_idx" ON "investment_transactions" ("user_id", "month");
+    CREATE INDEX IF NOT EXISTS "investment_goals_user_id_idx" ON "investment_goals" ("user_id");
+    CREATE INDEX IF NOT EXISTS "investment_allocations_user_id_idx" ON "investment_target_allocations" ("user_id");
   `);
 }
 

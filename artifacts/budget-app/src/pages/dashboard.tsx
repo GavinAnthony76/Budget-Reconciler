@@ -94,6 +94,25 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* Investment snapshot intentionally stays separate from household cash
+          flow. Deposits/withdrawals are included in Budget vs Actual below;
+          trades and dividends are never counted as a second expense. */}
+      <div className="glass-panel rounded-2xl border border-primary/20 p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">Investments</p>
+            <h2 className="font-display text-xl font-bold text-white mt-1">Portfolio progress</h2>
+          </div>
+          <a href="/investments" className="text-sm font-semibold text-primary hover:text-white transition-colors">Open Investments →</a>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <InvestmentMetric label="Portfolio value" value={formatCurrency(dashboard.investment.portfolioValue)} />
+          <InvestmentMetric label="Monthly plan" value={formatCurrency(dashboard.investment.monthlyContribution)} />
+          <InvestmentMetric label="Gain / loss" value={formatCurrency(dashboard.investment.investmentGrowth)} positive={dashboard.investment.investmentGrowth >= 0} />
+          <InvestmentMetric label="$25K goal" value={`${dashboard.investment.goalProgress.toFixed(1)}%`} />
+        </div>
+      </div>
+
       {/* Action Needed Alerts */}
       {(dashboard.reviewCount > 0 || dashboard.pendingCount > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400 fill-mode-both">
@@ -183,6 +202,15 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+    </div>
+  );
+}
+
+function InvestmentMetric({ label, value, positive }: { label: string; value: string; positive?: boolean }) {
+  return (
+    <div className="rounded-xl bg-black/20 border border-white/5 p-4">
+      <p className="text-xs text-white/45">{label}</p>
+      <p className={`mt-2 font-mono font-bold ${positive === undefined ? "text-white" : positive ? "text-chart-4" : "text-destructive"}`}>{value}</p>
     </div>
   );
 }

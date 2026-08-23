@@ -246,6 +246,265 @@ export interface RuleInput {
   subcategory: string;
 }
 
+export interface InvestmentAccount {
+  id: number;
+  name: string;
+  institution: string;
+  accountType: string;
+  cashBalance: number;
+  source: string;
+}
+
+export interface InvestmentAccountInput {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  institution: string;
+  /** @minLength 1 */
+  accountType: string;
+  cashBalance: number;
+}
+
+export interface InvestmentAccountUpdate {
+  /** @minLength 1 */
+  name?: string;
+  /** @minLength 1 */
+  institution?: string;
+  /** @minLength 1 */
+  accountType?: string;
+  cashBalance?: number;
+}
+
+export interface InvestmentHolding {
+  id: number;
+  accountId: number;
+  securityId: number;
+  ticker: string;
+  securityName: string;
+  shares: number;
+  averageCost: number;
+  costBasis: number;
+  currentPrice: number;
+  currentMarketValue: number;
+  unrealizedGainLoss: number;
+  unrealizedGainLossPercent: number;
+  portfolioAllocationPercent: number;
+}
+
+export interface InvestmentHoldingInput {
+  accountId: number;
+  /** @minLength 1 */
+  ticker: string;
+  /** @minLength 1 */
+  securityName: string;
+  /** @minimum 0 */
+  shares: number;
+  /** @minimum 0 */
+  averageCost: number;
+  /** @minimum 0 */
+  currentPrice: number;
+}
+
+export interface InvestmentHoldingUpdate {
+  /** @minLength 1 */
+  ticker?: string;
+  /** @minLength 1 */
+  securityName?: string;
+  /** @minimum 0 */
+  shares?: number;
+  /** @minimum 0 */
+  averageCost?: number;
+  /** @minimum 0 */
+  currentPrice?: number;
+}
+
+export type InvestmentTransactionTransactionType = typeof InvestmentTransactionTransactionType[keyof typeof InvestmentTransactionTransactionType];
+
+
+export const InvestmentTransactionTransactionType = {
+  deposit: 'deposit',
+  withdrawal: 'withdrawal',
+  buy: 'buy',
+  sell: 'sell',
+  dividend: 'dividend',
+  dividend_reinvestment: 'dividend_reinvestment',
+  fee: 'fee',
+} as const;
+
+export interface InvestmentTransaction {
+  id: number;
+  accountId: number;
+  /** @nullable */
+  securityId?: number | null;
+  /** @nullable */
+  ticker?: string | null;
+  date: string;
+  month: string;
+  transactionType: InvestmentTransactionTransactionType;
+  amount: number;
+  /** @nullable */
+  shares?: number | null;
+  /** @nullable */
+  price?: number | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type InvestmentTransactionInputTransactionType = typeof InvestmentTransactionInputTransactionType[keyof typeof InvestmentTransactionInputTransactionType];
+
+
+export const InvestmentTransactionInputTransactionType = {
+  deposit: 'deposit',
+  withdrawal: 'withdrawal',
+  buy: 'buy',
+  sell: 'sell',
+  dividend: 'dividend',
+  dividend_reinvestment: 'dividend_reinvestment',
+  fee: 'fee',
+} as const;
+
+export interface InvestmentTransactionInput {
+  accountId: number;
+  /** @nullable */
+  securityId?: number | null;
+  date: string;
+  transactionType: InvestmentTransactionInputTransactionType;
+  /** @minimum 0 */
+  amount: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  shares?: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  price?: number | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type InvestmentTransactionUpdateTransactionType = typeof InvestmentTransactionUpdateTransactionType[keyof typeof InvestmentTransactionUpdateTransactionType];
+
+
+export const InvestmentTransactionUpdateTransactionType = {
+  deposit: 'deposit',
+  withdrawal: 'withdrawal',
+  buy: 'buy',
+  sell: 'sell',
+  dividend: 'dividend',
+  dividend_reinvestment: 'dividend_reinvestment',
+  fee: 'fee',
+} as const;
+
+export interface InvestmentTransactionUpdate {
+  accountId?: number;
+  /** @nullable */
+  securityId?: number | null;
+  date?: string;
+  transactionType?: InvestmentTransactionUpdateTransactionType;
+  /** @minimum 0 */
+  amount?: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  shares?: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  price?: number | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface InvestmentGoal {
+  id: number;
+  /** @nullable */
+  accountId?: number | null;
+  name: string;
+  targetAmount: number;
+  monthlyPlannedContribution: number;
+  targetDate: string;
+  currentPortfolioValue: number;
+  contributionsToDate: number;
+  investmentGrowth: number;
+  remainingAmount: number;
+  percentComplete: number;
+  monthlyContributionProgress: number;
+}
+
+export interface InvestmentGoalInput {
+  /** @nullable */
+  accountId?: number | null;
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 0 */
+  targetAmount: number;
+  /** @minimum 0 */
+  monthlyPlannedContribution: number;
+  targetDate: string;
+}
+
+export interface InvestmentGoalUpdate {
+  /** @nullable */
+  accountId?: number | null;
+  /** @minLength 1 */
+  name?: string;
+  /** @minimum 0 */
+  targetAmount?: number;
+  /** @minimum 0 */
+  monthlyPlannedContribution?: number;
+  targetDate?: string;
+}
+
+export interface InvestmentTargetAllocation {
+  id: number;
+  accountId: number;
+  securityId: number;
+  ticker: string;
+  securityName: string;
+  monthlyAmount: number;
+}
+
+export interface InvestmentTargetAllocationInput {
+  accountId: number;
+  /** @minLength 1 */
+  ticker: string;
+  /** @minLength 1 */
+  securityName: string;
+  /** @minimum 0 */
+  monthlyAmount: number;
+}
+
+export interface InvestmentTargetAllocationUpdate {
+  /** @minimum 0 */
+  monthlyAmount?: number;
+}
+
+export interface InvestmentSummary {
+  portfolioValue: number;
+  monthlyContribution: number;
+  netContributions: number;
+  investmentGrowth: number;
+  goalProgress: number;
+}
+
+export interface InvestmentOverview {
+  summary: InvestmentSummary;
+  accounts: InvestmentAccount[];
+  holdings: InvestmentHolding[];
+  transactions: InvestmentTransaction[];
+  goals: InvestmentGoal[];
+  allocations: InvestmentTargetAllocation[];
+}
+
+export interface InvestmentPlanSyncResult {
+  message: string;
+}
+
 export interface CategoryActual {
   category: string;
   planned: number;
@@ -264,6 +523,7 @@ export interface DashboardSummary {
   reviewCount: number;
   pendingCount: number;
   byCategory: CategoryActual[];
+  investment: InvestmentSummary;
 }
 
 export interface ReconciliationRow {

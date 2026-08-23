@@ -91,6 +91,21 @@ router.patch("/transactions/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Invalid request" });
     return;
   }
+  const [existing] = await db
+    .select()
+    .from(transactionsTable)
+    .where(and(eq(transactionsTable.id, params.data.id), eq(transactionsTable.userId, userId)))
+    .limit(1);
+  if (!existing) {
+    res.status(404).json({ error: "Transaction not found" });
+    return;
+  }
+  if (existing.source === "investment") {
+    res.status(409).json({
+      error: "Manage linked investment transfers from the Investments page.",
+    });
+    return;
+  }
   const { saveRule, rulePattern, ...fields } = parsed.data;
   const update: Record<string, unknown> = { ...fields };
   if (fields.category) update.needsReview = false;
@@ -151,6 +166,21 @@ router.delete("/transactions/:id", async (req, res): Promise<void> => {
   const params = DeleteTransactionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const [existing] = await db
+    .select()
+    .from(transactionsTable)
+    .where(and(eq(transactionsTable.id, params.data.id), eq(transactionsTable.userId, userId)))
+    .limit(1);
+  if (!existing) {
+    res.status(404).json({ error: "Transaction not found" });
+    return;
+  }
+  if (existing.source === "investment") {
+    res.status(409).json({
+      error: "Manage linked investment transfers from the Investments page.",
+    });
     return;
   }
   const [row] = await db

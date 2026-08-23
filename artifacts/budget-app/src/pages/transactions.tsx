@@ -447,6 +447,17 @@ function DeleteTxnButton({ id, source, queryParams }: { id: number, source: stri
               ? "Imported CSV transaction and its linked spending entry removed."
               : "Transaction removed (and its linked imported row, if any).",
         });
+      },
+      onError: (err: any) => {
+        const isInvestmentTransfer =
+          source === "investment" || String(err?.message ?? "").includes("409");
+        toast({
+          title: isInvestmentTransfer ? "Manage this in Investments" : "Could not delete transaction",
+          description: isInvestmentTransfer
+            ? "This household transfer is linked to investment activity. Delete or edit it from the Investments page."
+            : err?.message || "Please try again.",
+          variant: "destructive",
+        });
       }
     }
   });
@@ -457,6 +468,14 @@ function DeleteTxnButton({ id, source, queryParams }: { id: number, source: stri
       size="icon" 
       className="h-9 w-9 text-white/50 hover:text-destructive hover:bg-destructive/20" 
       onClick={() => {
+         if (source === "investment") {
+           toast({
+             title: "Manage this in Investments",
+             description: "This household transfer is linked to investment activity. Delete or edit it from the Investments page.",
+             variant: "destructive",
+           });
+           return;
+         }
         if (
           confirm(
             source === "bank"

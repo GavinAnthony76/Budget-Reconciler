@@ -114,12 +114,14 @@ router.get("/export", async (req, res): Promise<void> => {
   const BANK_CAPACITY = 1999;
   const MANUAL_CAPACITY = 899;
   const bankTotal = txns.filter((t) => t.source === "bank").length;
-  const manualTotal = txns.filter((t) => t.source === "manual").length;
+  const manualTotal = txns.filter(
+    (t) => t.source === "manual" || t.source === "investment",
+  ).length;
   if (bankTotal > BANK_CAPACITY || manualTotal > MANUAL_CAPACITY) {
     res.status(409).json({
       error:
-        `Workbook export supports up to ${BANK_CAPACITY} bank and ${MANUAL_CAPACITY} manual transactions ` +
-        `(you have ${bankTotal} bank and ${manualTotal} manual). ` +
+        `Workbook export supports up to ${BANK_CAPACITY} bank and ${MANUAL_CAPACITY} household actual transactions ` +
+        `(you have ${bankTotal} bank and ${manualTotal} household actuals). ` +
         "Archive older transactions before exporting.",
     });
     return;
@@ -163,7 +165,7 @@ router.get("/export", async (req, res): Promise<void> => {
 
   // ----- Manual Actuals rows -----
   const manualTxns = txns
-    .filter((t) => t.source === "manual")
+    .filter((t) => t.source === "manual" || t.source === "investment")
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id));
   for (let r = 2; r <= 900; r++) {
     for (const c of ["A", "B", "C", "D", "E", "F", "G", "H", "I"])

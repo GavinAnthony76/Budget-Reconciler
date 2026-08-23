@@ -1,1 +1,3 @@
 - [Budget workbook quirks](budget-workbook-quirks.md) — pay-cycle month cutoff (day>=Setup!B9), xlsx-populate shared-formula pitfalls, reconciliation rules.
+- [Tenant category uniqueness](tenant-category-uniqueness.md) — legacy categories may retain a global unique key even after user scoping; remove it before enforcing a per-user index.
+- [Investment budget boundary](investment-budget-boundary.md) — household contributions use one linked ledger row; trades and other brokerage activity never enter Budget vs Actual.

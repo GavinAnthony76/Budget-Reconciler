@@ -15,6 +15,7 @@ import {
 import { norm } from "../lib/budget";
 import { getOrCreateSettings } from "./budget";
 import { currentUserId } from "../middlewares/requireUser";
+import { getInvestmentOverviewForUser } from "./investments";
 
 const router: IRouter = Router();
 
@@ -33,6 +34,7 @@ router.get("/dashboard", async (req, res): Promise<void> => {
     db.select().from(planLinesTable).where(and(eq(planLinesTable.month, month), eq(planLinesTable.userId, userId))),
     db.select().from(incomeSourcesTable).where(eq(incomeSourcesTable.userId, userId)),
   ]);
+  const investmentOverview = await getInvestmentOverviewForUser(userId, month);
 
   const plannedFromSources = incomes.reduce(
     (s, i) => s + i.monthlyEquivalent,
@@ -52,9 +54,14 @@ router.get("/dashboard", async (req, res): Promise<void> => {
     )
     .reduce((s, t) => s + t.amount, 0);
 
-  // Actual spending comes from manual (live) rows — the workbook's source of truth
+  // Contributions create exactly one linked household transaction. Reporting
+  // counts every actual ledger row; it never guesses that two equal transfers
+  // are duplicates, because same-day equal contributions can both be real.
   const spending = txns.filter(
-    (t) => t.source === "manual" && t.include && t.amount < 0,
+    (t) =>
+      (t.source === "manual" || t.source === "investment") &&
+      t.include &&
+      t.amount < 0,
   );
   const actualExpenses = spending.reduce((s, t) => s + -t.amount, 0);
 
@@ -97,6 +104,7 @@ router.get("/dashboard", async (req, res): Promise<void> => {
       reviewCount,
       pendingCount,
       byCategory,
+      investment: investmentOverview.overview.summary,
     }),
   );
 });
@@ -120,9 +128,11 @@ router.get("/reconciliation", async (req, res): Promise<void> => {
   for (const t of txns) {
     if (!t.include || t.amount >= 0) continue;
     const c = t.category ?? "Miscellaneous";
-    if (t.source === "manual") manual.set(c, (manual.get(c) ?? 0) + -t.amount);
-    else if (norm(t.status) === "POSTED")
+    if (t.source === "manual" || t.source === "investment") {
+      manual.set(c, (manual.get(c) ?? 0) + -t.amount);
+    } else if (norm(t.status) === "POSTED") {
       bank.set(c, (bank.get(c) ?? 0) + -t.amount);
+    }
   }
   const cats = [...new Set([...manual.keys(), ...bank.keys()])].sort();
   const rows = cats.map((category) => {

@@ -7,6 +7,7 @@ import {
   CheckSquare, 
   Settings, 
   Download,
+  TrendingUp,
   Menu,
   X,
   LogOut
@@ -46,6 +47,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/transactions", label: "Ledger", icon: ListOrdered },
     { href: "/import", label: "Import CSV", icon: Upload },
     { href: "/reconciliation", label: "Reconciliation", icon: CheckSquare },
+    { href: "/investments", label: "Investments", icon: TrendingUp },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 

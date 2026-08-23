@@ -35,6 +35,23 @@ import type {
   IncomeSource,
   IncomeSourceInput,
   IncomeSourceUpdate,
+  InvestmentAccount,
+  InvestmentAccountInput,
+  InvestmentAccountUpdate,
+  InvestmentGoal,
+  InvestmentGoalInput,
+  InvestmentGoalUpdate,
+  InvestmentHolding,
+  InvestmentHoldingInput,
+  InvestmentHoldingUpdate,
+  InvestmentOverview,
+  InvestmentPlanSyncResult,
+  InvestmentTargetAllocation,
+  InvestmentTargetAllocationInput,
+  InvestmentTargetAllocationUpdate,
+  InvestmentTransaction,
+  InvestmentTransactionInput,
+  InvestmentTransactionUpdate,
   ListPlanLinesParams,
   ListTransactionsParams,
   PlanLine,
@@ -2064,6 +2081,1224 @@ export const useDeleteRule = <TError = ErrorType<ApiMessage>,
         TContext
       > => {
       return useMutation(getDeleteRuleMutationOptions(options));
+    }
+
+export const getGetInvestmentOverviewUrl = () => {
+
+
+
+
+  return `/api/investments`
+}
+
+/**
+ * @summary Get investment accounts, holdings, goals, allocations, and activity
+ */
+export const getInvestmentOverview = async ( options?: Parameters<typeof customFetch>[1]): Promise<InvestmentOverview> => {
+
+  return customFetch<InvestmentOverview>(getGetInvestmentOverviewUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInvestmentOverviewQueryKey = () => {
+    return [
+    `/api/investments`
+    ] as const;
+    }
+
+
+export const getGetInvestmentOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getInvestmentOverview>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInvestmentOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInvestmentOverviewQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInvestmentOverview>>> = ({ signal }) => getInvestmentOverview({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInvestmentOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetInvestmentOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getInvestmentOverview>>>
+export type GetInvestmentOverviewQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get investment accounts, holdings, goals, allocations, and activity
+ */
+
+export function useGetInvestmentOverview<TData = Awaited<ReturnType<typeof getInvestmentOverview>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInvestmentOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetInvestmentOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateInvestmentAccountUrl = () => {
+
+
+
+
+  return `/api/investment/accounts`
+}
+
+/**
+ * @summary Create an investment account
+ */
+export const createInvestmentAccount = async (investmentAccountInput: InvestmentAccountInput, options?: Parameters<typeof customFetch>[1]): Promise<InvestmentAccount> => {
+
+  return customFetch<InvestmentAccount>(getCreateInvestmentAccountUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(investmentAccountInput)
+  }
+);}
+
+
+
+
+
+export const getCreateInvestmentAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvestmentAccount>>, TError,{data: BodyType<InvestmentAccountInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInvestmentAccount>>, TError,{data: BodyType<InvestmentAccountInput>}, TContext> => {
+
+const mutationKey = ['createInvestmentAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInvestmentAccount>>, {data: BodyType<InvestmentAccountInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createInvestmentAccount(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInvestmentAccountMutationResult = NonNullable<Awaited<ReturnType<typeof createInvestmentAccount>>>
+    export type CreateInvestmentAccountMutationBody = BodyType<InvestmentAccountInput>
+    export type CreateInvestmentAccountMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an investment account
+ */
+export const useCreateInvestmentAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvestmentAccount>>, TError,{data: BodyType<InvestmentAccountInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createInvestmentAccount>>,
+        TError,
+        {data: BodyType<InvestmentAccountInput>},
+        TContext
+      > => {
+      return useMutation(getCreateInvestmentAccountMutationOptions(options));
+    }
+
+export const getUpdateInvestmentAccountUrl = (id: number,) => {
+
+
+
+
+  return `/api/investment/accounts/${id}`
+}
+
+/**
+ * @summary Update an investment account
+ */
+export const updateInvestmentAccount = async (id: number,
+    investmentAccountUpdate: InvestmentAccountUpdate, options?: Parameters<typeof customFetch>[1]): Promise<InvestmentAccount> => {
+
+  return customFetch<InvestmentAccount>(getUpdateInvestmentAccountUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(investmentAccountUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateInvestmentAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentAccount>>, TError,{id: number;data: BodyType<InvestmentAccountUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentAccount>>, TError,{id: number;data: BodyType<InvestmentAccountUpdate>}, TContext> => {
+
+const mutationKey = ['updateInvestmentAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateInvestmentAccount>>, {id: number;data: BodyType<InvestmentAccountUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateInvestmentAccount(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateInvestmentAccountMutationResult = NonNullable<Awaited<ReturnType<typeof updateInvestmentAccount>>>
+    export type UpdateInvestmentAccountMutationBody = BodyType<InvestmentAccountUpdate>
+    export type UpdateInvestmentAccountMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update an investment account
+ */
+export const useUpdateInvestmentAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentAccount>>, TError,{id: number;data: BodyType<InvestmentAccountUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateInvestmentAccount>>,
+        TError,
+        {id: number;data: BodyType<InvestmentAccountUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateInvestmentAccountMutationOptions(options));
+    }
+
+export const getDeleteInvestmentAccountUrl = (id: number,) => {
+
+
+
+
+  return `/api/investment/accounts/${id}`
+}
+
+/**
+ * @summary Delete an empty investment account
+ */
+export const deleteInvestmentAccount = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteInvestmentAccountUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteInvestmentAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentAccount>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentAccount>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteInvestmentAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteInvestmentAccount>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteInvestmentAccount(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteInvestmentAccountMutationResult = NonNullable<Awaited<ReturnType<typeof deleteInvestmentAccount>>>
+
+    export type DeleteInvestmentAccountMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an empty investment account
+ */
+export const useDeleteInvestmentAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentAccount>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteInvestmentAccount>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteInvestmentAccountMutationOptions(options));
+    }
+
+export const getCreateInvestmentHoldingUrl = () => {
+
+
+
+
+  return `/api/investment/holdings`
+}
+
+/**
+ * @summary Create a manual holding
+ */
+export const createInvestmentHolding = async (investmentHoldingInput: InvestmentHoldingInput, options?: Parameters<typeof customFetch>[1]): Promise<InvestmentHolding> => {
+
+  return customFetch<InvestmentHolding>(getCreateInvestmentHoldingUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(investmentHoldingInput)
+  }
+);}
+
+
+
+
+
+export const getCreateInvestmentHoldingMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvestmentHolding>>, TError,{data: BodyType<InvestmentHoldingInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInvestmentHolding>>, TError,{data: BodyType<InvestmentHoldingInput>}, TContext> => {
+
+const mutationKey = ['createInvestmentHolding'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInvestmentHolding>>, {data: BodyType<InvestmentHoldingInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createInvestmentHolding(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInvestmentHoldingMutationResult = NonNullable<Awaited<ReturnType<typeof createInvestmentHolding>>>
+    export type CreateInvestmentHoldingMutationBody = BodyType<InvestmentHoldingInput>
+    export type CreateInvestmentHoldingMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a manual holding
+ */
+export const useCreateInvestmentHolding = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvestmentHolding>>, TError,{data: BodyType<InvestmentHoldingInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createInvestmentHolding>>,
+        TError,
+        {data: BodyType<InvestmentHoldingInput>},
+        TContext
+      > => {
+      return useMutation(getCreateInvestmentHoldingMutationOptions(options));
+    }
+
+export const getUpdateInvestmentHoldingUrl = (id: number,) => {
+
+
+
+
+  return `/api/investment/holdings/${id}`
+}
+
+/**
+ * @summary Update a manual holding
+ */
+export const updateInvestmentHolding = async (id: number,
+    investmentHoldingUpdate: InvestmentHoldingUpdate, options?: Parameters<typeof customFetch>[1]): Promise<InvestmentHolding> => {
+
+  return customFetch<InvestmentHolding>(getUpdateInvestmentHoldingUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(investmentHoldingUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateInvestmentHoldingMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentHolding>>, TError,{id: number;data: BodyType<InvestmentHoldingUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentHolding>>, TError,{id: number;data: BodyType<InvestmentHoldingUpdate>}, TContext> => {
+
+const mutationKey = ['updateInvestmentHolding'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateInvestmentHolding>>, {id: number;data: BodyType<InvestmentHoldingUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateInvestmentHolding(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateInvestmentHoldingMutationResult = NonNullable<Awaited<ReturnType<typeof updateInvestmentHolding>>>
+    export type UpdateInvestmentHoldingMutationBody = BodyType<InvestmentHoldingUpdate>
+    export type UpdateInvestmentHoldingMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a manual holding
+ */
+export const useUpdateInvestmentHolding = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentHolding>>, TError,{id: number;data: BodyType<InvestmentHoldingUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateInvestmentHolding>>,
+        TError,
+        {id: number;data: BodyType<InvestmentHoldingUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateInvestmentHoldingMutationOptions(options));
+    }
+
+export const getDeleteInvestmentHoldingUrl = (id: number,) => {
+
+
+
+
+  return `/api/investment/holdings/${id}`
+}
+
+/**
+ * @summary Delete a holding
+ */
+export const deleteInvestmentHolding = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteInvestmentHoldingUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteInvestmentHoldingMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentHolding>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentHolding>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteInvestmentHolding'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteInvestmentHolding>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteInvestmentHolding(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteInvestmentHoldingMutationResult = NonNullable<Awaited<ReturnType<typeof deleteInvestmentHolding>>>
+
+    export type DeleteInvestmentHoldingMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a holding
+ */
+export const useDeleteInvestmentHolding = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentHolding>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteInvestmentHolding>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteInvestmentHoldingMutationOptions(options));
+    }
+
+export const getCreateInvestmentTransactionUrl = () => {
+
+
+
+
+  return `/api/investment/transactions`
+}
+
+/**
+ * @summary Add a manual investment transaction
+ */
+export const createInvestmentTransaction = async (investmentTransactionInput: InvestmentTransactionInput, options?: Parameters<typeof customFetch>[1]): Promise<InvestmentTransaction> => {
+
+  return customFetch<InvestmentTransaction>(getCreateInvestmentTransactionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(investmentTransactionInput)
+  }
+);}
+
+
+
+
+
+export const getCreateInvestmentTransactionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvestmentTransaction>>, TError,{data: BodyType<InvestmentTransactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInvestmentTransaction>>, TError,{data: BodyType<InvestmentTransactionInput>}, TContext> => {
+
+const mutationKey = ['createInvestmentTransaction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInvestmentTransaction>>, {data: BodyType<InvestmentTransactionInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createInvestmentTransaction(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInvestmentTransactionMutationResult = NonNullable<Awaited<ReturnType<typeof createInvestmentTransaction>>>
+    export type CreateInvestmentTransactionMutationBody = BodyType<InvestmentTransactionInput>
+    export type CreateInvestmentTransactionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a manual investment transaction
+ */
+export const useCreateInvestmentTransaction = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvestmentTransaction>>, TError,{data: BodyType<InvestmentTransactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createInvestmentTransaction>>,
+        TError,
+        {data: BodyType<InvestmentTransactionInput>},
+        TContext
+      > => {
+      return useMutation(getCreateInvestmentTransactionMutationOptions(options));
+    }
+
+export const getUpdateInvestmentTransactionUrl = (id: number,) => {
+
+
+
+
+  return `/api/investment/transactions/${id}`
+}
+
+/**
+ * @summary Update a manual investment transaction
+ */
+export const updateInvestmentTransaction = async (id: number,
+    investmentTransactionUpdate: InvestmentTransactionUpdate, options?: Parameters<typeof customFetch>[1]): Promise<InvestmentTransaction> => {
+
+  return customFetch<InvestmentTransaction>(getUpdateInvestmentTransactionUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(investmentTransactionUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateInvestmentTransactionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentTransaction>>, TError,{id: number;data: BodyType<InvestmentTransactionUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentTransaction>>, TError,{id: number;data: BodyType<InvestmentTransactionUpdate>}, TContext> => {
+
+const mutationKey = ['updateInvestmentTransaction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateInvestmentTransaction>>, {id: number;data: BodyType<InvestmentTransactionUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateInvestmentTransaction(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateInvestmentTransactionMutationResult = NonNullable<Awaited<ReturnType<typeof updateInvestmentTransaction>>>
+    export type UpdateInvestmentTransactionMutationBody = BodyType<InvestmentTransactionUpdate>
+    export type UpdateInvestmentTransactionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a manual investment transaction
+ */
+export const useUpdateInvestmentTransaction = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentTransaction>>, TError,{id: number;data: BodyType<InvestmentTransactionUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateInvestmentTransaction>>,
+        TError,
+        {id: number;data: BodyType<InvestmentTransactionUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateInvestmentTransactionMutationOptions(options));
+    }
+
+export const getDeleteInvestmentTransactionUrl = (id: number,) => {
+
+
+
+
+  return `/api/investment/transactions/${id}`
+}
+
+/**
+ * @summary Delete a manual investment transaction
+ */
+export const deleteInvestmentTransaction = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteInvestmentTransactionUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteInvestmentTransactionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentTransaction>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentTransaction>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteInvestmentTransaction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteInvestmentTransaction>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteInvestmentTransaction(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteInvestmentTransactionMutationResult = NonNullable<Awaited<ReturnType<typeof deleteInvestmentTransaction>>>
+
+    export type DeleteInvestmentTransactionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a manual investment transaction
+ */
+export const useDeleteInvestmentTransaction = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentTransaction>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteInvestmentTransaction>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteInvestmentTransactionMutationOptions(options));
+    }
+
+export const getCreateInvestmentGoalUrl = () => {
+
+
+
+
+  return `/api/investment/goals`
+}
+
+/**
+ * @summary Create an investment goal
+ */
+export const createInvestmentGoal = async (investmentGoalInput: InvestmentGoalInput, options?: Parameters<typeof customFetch>[1]): Promise<InvestmentGoal> => {
+
+  return customFetch<InvestmentGoal>(getCreateInvestmentGoalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(investmentGoalInput)
+  }
+);}
+
+
+
+
+
+export const getCreateInvestmentGoalMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvestmentGoal>>, TError,{data: BodyType<InvestmentGoalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInvestmentGoal>>, TError,{data: BodyType<InvestmentGoalInput>}, TContext> => {
+
+const mutationKey = ['createInvestmentGoal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInvestmentGoal>>, {data: BodyType<InvestmentGoalInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createInvestmentGoal(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInvestmentGoalMutationResult = NonNullable<Awaited<ReturnType<typeof createInvestmentGoal>>>
+    export type CreateInvestmentGoalMutationBody = BodyType<InvestmentGoalInput>
+    export type CreateInvestmentGoalMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an investment goal
+ */
+export const useCreateInvestmentGoal = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvestmentGoal>>, TError,{data: BodyType<InvestmentGoalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createInvestmentGoal>>,
+        TError,
+        {data: BodyType<InvestmentGoalInput>},
+        TContext
+      > => {
+      return useMutation(getCreateInvestmentGoalMutationOptions(options));
+    }
+
+export const getUpdateInvestmentGoalUrl = (id: number,) => {
+
+
+
+
+  return `/api/investment/goals/${id}`
+}
+
+/**
+ * @summary Update an investment goal
+ */
+export const updateInvestmentGoal = async (id: number,
+    investmentGoalUpdate: InvestmentGoalUpdate, options?: Parameters<typeof customFetch>[1]): Promise<InvestmentGoal> => {
+
+  return customFetch<InvestmentGoal>(getUpdateInvestmentGoalUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(investmentGoalUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateInvestmentGoalMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentGoal>>, TError,{id: number;data: BodyType<InvestmentGoalUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentGoal>>, TError,{id: number;data: BodyType<InvestmentGoalUpdate>}, TContext> => {
+
+const mutationKey = ['updateInvestmentGoal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateInvestmentGoal>>, {id: number;data: BodyType<InvestmentGoalUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateInvestmentGoal(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateInvestmentGoalMutationResult = NonNullable<Awaited<ReturnType<typeof updateInvestmentGoal>>>
+    export type UpdateInvestmentGoalMutationBody = BodyType<InvestmentGoalUpdate>
+    export type UpdateInvestmentGoalMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update an investment goal
+ */
+export const useUpdateInvestmentGoal = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentGoal>>, TError,{id: number;data: BodyType<InvestmentGoalUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateInvestmentGoal>>,
+        TError,
+        {id: number;data: BodyType<InvestmentGoalUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateInvestmentGoalMutationOptions(options));
+    }
+
+export const getDeleteInvestmentGoalUrl = (id: number,) => {
+
+
+
+
+  return `/api/investment/goals/${id}`
+}
+
+/**
+ * @summary Delete an investment goal
+ */
+export const deleteInvestmentGoal = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteInvestmentGoalUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteInvestmentGoalMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentGoal>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentGoal>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteInvestmentGoal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteInvestmentGoal>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteInvestmentGoal(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteInvestmentGoalMutationResult = NonNullable<Awaited<ReturnType<typeof deleteInvestmentGoal>>>
+
+    export type DeleteInvestmentGoalMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an investment goal
+ */
+export const useDeleteInvestmentGoal = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentGoal>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteInvestmentGoal>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteInvestmentGoalMutationOptions(options));
+    }
+
+export const getCreateInvestmentTargetAllocationUrl = () => {
+
+
+
+
+  return `/api/investment/allocations`
+}
+
+/**
+ * @summary Create an investment target allocation
+ */
+export const createInvestmentTargetAllocation = async (investmentTargetAllocationInput: InvestmentTargetAllocationInput, options?: Parameters<typeof customFetch>[1]): Promise<InvestmentTargetAllocation> => {
+
+  return customFetch<InvestmentTargetAllocation>(getCreateInvestmentTargetAllocationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(investmentTargetAllocationInput)
+  }
+);}
+
+
+
+
+
+export const getCreateInvestmentTargetAllocationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvestmentTargetAllocation>>, TError,{data: BodyType<InvestmentTargetAllocationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInvestmentTargetAllocation>>, TError,{data: BodyType<InvestmentTargetAllocationInput>}, TContext> => {
+
+const mutationKey = ['createInvestmentTargetAllocation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInvestmentTargetAllocation>>, {data: BodyType<InvestmentTargetAllocationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createInvestmentTargetAllocation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInvestmentTargetAllocationMutationResult = NonNullable<Awaited<ReturnType<typeof createInvestmentTargetAllocation>>>
+    export type CreateInvestmentTargetAllocationMutationBody = BodyType<InvestmentTargetAllocationInput>
+    export type CreateInvestmentTargetAllocationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an investment target allocation
+ */
+export const useCreateInvestmentTargetAllocation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvestmentTargetAllocation>>, TError,{data: BodyType<InvestmentTargetAllocationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createInvestmentTargetAllocation>>,
+        TError,
+        {data: BodyType<InvestmentTargetAllocationInput>},
+        TContext
+      > => {
+      return useMutation(getCreateInvestmentTargetAllocationMutationOptions(options));
+    }
+
+export const getUpdateInvestmentTargetAllocationUrl = (id: number,) => {
+
+
+
+
+  return `/api/investment/allocations/${id}`
+}
+
+/**
+ * @summary Update an investment target allocation
+ */
+export const updateInvestmentTargetAllocation = async (id: number,
+    investmentTargetAllocationUpdate: InvestmentTargetAllocationUpdate, options?: Parameters<typeof customFetch>[1]): Promise<InvestmentTargetAllocation> => {
+
+  return customFetch<InvestmentTargetAllocation>(getUpdateInvestmentTargetAllocationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(investmentTargetAllocationUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateInvestmentTargetAllocationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentTargetAllocation>>, TError,{id: number;data: BodyType<InvestmentTargetAllocationUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentTargetAllocation>>, TError,{id: number;data: BodyType<InvestmentTargetAllocationUpdate>}, TContext> => {
+
+const mutationKey = ['updateInvestmentTargetAllocation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateInvestmentTargetAllocation>>, {id: number;data: BodyType<InvestmentTargetAllocationUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateInvestmentTargetAllocation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateInvestmentTargetAllocationMutationResult = NonNullable<Awaited<ReturnType<typeof updateInvestmentTargetAllocation>>>
+    export type UpdateInvestmentTargetAllocationMutationBody = BodyType<InvestmentTargetAllocationUpdate>
+    export type UpdateInvestmentTargetAllocationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update an investment target allocation
+ */
+export const useUpdateInvestmentTargetAllocation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvestmentTargetAllocation>>, TError,{id: number;data: BodyType<InvestmentTargetAllocationUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateInvestmentTargetAllocation>>,
+        TError,
+        {id: number;data: BodyType<InvestmentTargetAllocationUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateInvestmentTargetAllocationMutationOptions(options));
+    }
+
+export const getDeleteInvestmentTargetAllocationUrl = (id: number,) => {
+
+
+
+
+  return `/api/investment/allocations/${id}`
+}
+
+/**
+ * @summary Delete an investment target allocation
+ */
+export const deleteInvestmentTargetAllocation = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteInvestmentTargetAllocationUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteInvestmentTargetAllocationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentTargetAllocation>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentTargetAllocation>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteInvestmentTargetAllocation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteInvestmentTargetAllocation>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteInvestmentTargetAllocation(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteInvestmentTargetAllocationMutationResult = NonNullable<Awaited<ReturnType<typeof deleteInvestmentTargetAllocation>>>
+
+    export type DeleteInvestmentTargetAllocationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an investment target allocation
+ */
+export const useDeleteInvestmentTargetAllocation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInvestmentTargetAllocation>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteInvestmentTargetAllocation>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteInvestmentTargetAllocationMutationOptions(options));
+    }
+
+export const getSyncInvestmentContributionPlanUrl = () => {
+
+
+
+
+  return `/api/investment/plan`
+}
+
+/**
+ * @summary Sync the current and next budget cycles to the investment allocation plan
+ */
+export const syncInvestmentContributionPlan = async ( options?: Parameters<typeof customFetch>[1]): Promise<InvestmentPlanSyncResult> => {
+
+  return customFetch<InvestmentPlanSyncResult>(getSyncInvestmentContributionPlanUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSyncInvestmentContributionPlanMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncInvestmentContributionPlan>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncInvestmentContributionPlan>>, TError,void, TContext> => {
+
+const mutationKey = ['syncInvestmentContributionPlan'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncInvestmentContributionPlan>>, void> = () => {
+
+
+          return  syncInvestmentContributionPlan(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncInvestmentContributionPlanMutationResult = NonNullable<Awaited<ReturnType<typeof syncInvestmentContributionPlan>>>
+
+    export type SyncInvestmentContributionPlanMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Sync the current and next budget cycles to the investment allocation plan
+ */
+export const useSyncInvestmentContributionPlan = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncInvestmentContributionPlan>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncInvestmentContributionPlan>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSyncInvestmentContributionPlanMutationOptions(options));
     }
 
 export const getGetDashboardUrl = (params?: GetDashboardParams,) => {

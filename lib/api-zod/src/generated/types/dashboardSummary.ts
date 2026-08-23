@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CategoryActual } from './categoryActual';
+import type { InvestmentSummary } from './investmentSummary';
 
 export interface DashboardSummary {
   month: string;
@@ -18,4 +19,5 @@ export interface DashboardSummary {
   reviewCount: number;
   pendingCount: number;
   byCategory: CategoryActual[];
+  investment: InvestmentSummary;
 }

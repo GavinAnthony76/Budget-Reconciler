@@ -4,6 +4,7 @@ import budgetRouter from "./budget";
 import transactionsRouter from "./transactions";
 import insightsRouter from "./insights";
 import exportRouter from "./exportWorkbook";
+import investmentsRouter from "./investments";
 import { requireUser } from "../middlewares/requireUser";
 
 const router: IRouter = Router();
@@ -13,6 +14,7 @@ router.use(requireUser);
 router.use(budgetRouter);
 router.use(transactionsRouter);
 router.use(insightsRouter);
+router.use(investmentsRouter);
 router.use(exportRouter);
 
 export default router;

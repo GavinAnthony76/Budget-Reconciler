@@ -19,6 +19,7 @@ tags:
   - name: dashboard
   - name: reconciliation
   - name: export
+  - name: investments
 paths:
   /healthz:
     get:
@@ -550,6 +551,290 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiMessage"
+  /investments:
+    get:
+      operationId: getInvestmentOverview
+      tags: [investments]
+      summary: Get investment accounts, holdings, goals, allocations, and activity
+      responses:
+        "200":
+          description: Investment workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentOverview"
+  /investment/accounts:
+    post:
+      operationId: createInvestmentAccount
+      tags: [investments]
+      summary: Create an investment account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentAccountInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentAccount"
+  /investment/accounts/{id}:
+    patch:
+      operationId: updateInvestmentAccount
+      tags: [investments]
+      summary: Update an investment account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentAccountUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentAccount"
+    delete:
+      operationId: deleteInvestmentAccount
+      tags: [investments]
+      summary: Delete an empty investment account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204": { description: Deleted }
+  /investment/holdings:
+    post:
+      operationId: createInvestmentHolding
+      tags: [investments]
+      summary: Create a manual holding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentHoldingInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentHolding"
+  /investment/holdings/{id}:
+    patch:
+      operationId: updateInvestmentHolding
+      tags: [investments]
+      summary: Update a manual holding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentHoldingUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentHolding"
+    delete:
+      operationId: deleteInvestmentHolding
+      tags: [investments]
+      summary: Delete a holding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204": { description: Deleted }
+  /investment/transactions:
+    post:
+      operationId: createInvestmentTransaction
+      tags: [investments]
+      summary: Add a manual investment transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentTransactionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentTransaction"
+  /investment/transactions/{id}:
+    patch:
+      operationId: updateInvestmentTransaction
+      tags: [investments]
+      summary: Update a manual investment transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentTransactionUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentTransaction"
+    delete:
+      operationId: deleteInvestmentTransaction
+      tags: [investments]
+      summary: Delete a manual investment transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204": { description: Deleted }
+  /investment/goals:
+    post:
+      operationId: createInvestmentGoal
+      tags: [investments]
+      summary: Create an investment goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentGoalInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentGoal"
+  /investment/goals/{id}:
+    patch:
+      operationId: updateInvestmentGoal
+      tags: [investments]
+      summary: Update an investment goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentGoalUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentGoal"
+    delete:
+      operationId: deleteInvestmentGoal
+      tags: [investments]
+      summary: Delete an investment goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204": { description: Deleted }
+  /investment/allocations:
+    post:
+      operationId: createInvestmentTargetAllocation
+      tags: [investments]
+      summary: Create an investment target allocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentTargetAllocationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentTargetAllocation"
+  /investment/allocations/{id}:
+    patch:
+      operationId: updateInvestmentTargetAllocation
+      tags: [investments]
+      summary: Update an investment target allocation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentTargetAllocationUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentTargetAllocation"
+    delete:
+      operationId: deleteInvestmentTargetAllocation
+      tags: [investments]
+      summary: Delete an investment target allocation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204": { description: Deleted }
+  /investment/plan:
+    post:
+      operationId: syncInvestmentContributionPlan
+      tags: [investments]
+      summary: Sync the current and next budget cycles to the investment allocation plan
+      responses:
+        "200":
+          description: Budget plan synchronized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentPlanSyncResult"
   /dashboard:
     get:
       operationId: getDashboard
@@ -814,6 +1099,199 @@ components:
         pattern: { type: string, minLength: 2 }
         category: { type: string, minLength: 1 }
         subcategory: { type: string, minLength: 1 }
+    InvestmentAccount:
+      type: object
+      required: [id, name, institution, accountType, cashBalance, source]
+      properties:
+        id: { type: number }
+        name: { type: string }
+        institution: { type: string }
+        accountType: { type: string }
+        cashBalance: { type: number }
+        source: { type: string }
+    InvestmentAccountInput:
+      type: object
+      required: [name, institution, accountType, cashBalance]
+      properties:
+        name: { type: string, minLength: 1 }
+        institution: { type: string, minLength: 1 }
+        accountType: { type: string, minLength: 1 }
+        cashBalance: { type: number }
+    InvestmentAccountUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        institution: { type: string, minLength: 1 }
+        accountType: { type: string, minLength: 1 }
+        cashBalance: { type: number }
+    InvestmentHolding:
+      type: object
+      required: [id, accountId, securityId, ticker, securityName, shares, averageCost, costBasis, currentPrice, currentMarketValue, unrealizedGainLoss, unrealizedGainLossPercent, portfolioAllocationPercent]
+      properties:
+        id: { type: number }
+        accountId: { type: number }
+        securityId: { type: number }
+        ticker: { type: string }
+        securityName: { type: string }
+        shares: { type: number }
+        averageCost: { type: number }
+        costBasis: { type: number }
+        currentPrice: { type: number }
+        currentMarketValue: { type: number }
+        unrealizedGainLoss: { type: number }
+        unrealizedGainLossPercent: { type: number }
+        portfolioAllocationPercent: { type: number }
+    InvestmentHoldingInput:
+      type: object
+      required: [accountId, ticker, securityName, shares, averageCost, currentPrice]
+      properties:
+        accountId: { type: number }
+        ticker: { type: string, minLength: 1 }
+        securityName: { type: string, minLength: 1 }
+        shares: { type: number, minimum: 0 }
+        averageCost: { type: number, minimum: 0 }
+        currentPrice: { type: number, minimum: 0 }
+    InvestmentHoldingUpdate:
+      type: object
+      properties:
+        ticker: { type: string, minLength: 1 }
+        securityName: { type: string, minLength: 1 }
+        shares: { type: number, minimum: 0 }
+        averageCost: { type: number, minimum: 0 }
+        currentPrice: { type: number, minimum: 0 }
+    InvestmentTransaction:
+      type: object
+      required: [id, accountId, date, month, transactionType, amount]
+      properties:
+        id: { type: number }
+        accountId: { type: number }
+        securityId: { type: ["number", "null"] }
+        ticker: { type: ["string", "null"] }
+        date: { type: string }
+        month: { type: string }
+        transactionType: { type: string, enum: [deposit, withdrawal, buy, sell, dividend, dividend_reinvestment, fee] }
+        amount: { type: number }
+        shares: { type: ["number", "null"] }
+        price: { type: ["number", "null"] }
+        notes: { type: ["string", "null"] }
+    InvestmentTransactionInput:
+      type: object
+      required: [accountId, date, transactionType, amount]
+      properties:
+        accountId: { type: number }
+        securityId: { type: ["number", "null"] }
+        date: { type: string }
+        transactionType: { type: string, enum: [deposit, withdrawal, buy, sell, dividend, dividend_reinvestment, fee] }
+        amount: { type: number, minimum: 0 }
+        shares: { type: ["number", "null"], minimum: 0 }
+        price: { type: ["number", "null"], minimum: 0 }
+        notes: { type: ["string", "null"] }
+    InvestmentTransactionUpdate:
+      type: object
+      properties:
+        accountId: { type: number }
+        securityId: { type: ["number", "null"] }
+        date: { type: string }
+        transactionType: { type: string, enum: [deposit, withdrawal, buy, sell, dividend, dividend_reinvestment, fee] }
+        amount: { type: number, minimum: 0 }
+        shares: { type: ["number", "null"], minimum: 0 }
+        price: { type: ["number", "null"], minimum: 0 }
+        notes: { type: ["string", "null"] }
+    InvestmentGoal:
+      type: object
+      required: [id, name, targetAmount, monthlyPlannedContribution, targetDate, currentPortfolioValue, contributionsToDate, investmentGrowth, remainingAmount, percentComplete, monthlyContributionProgress]
+      properties:
+        id: { type: number }
+        accountId: { type: ["number", "null"] }
+        name: { type: string }
+        targetAmount: { type: number }
+        monthlyPlannedContribution: { type: number }
+        targetDate: { type: string }
+        currentPortfolioValue: { type: number }
+        contributionsToDate: { type: number }
+        investmentGrowth: { type: number }
+        remainingAmount: { type: number }
+        percentComplete: { type: number }
+        monthlyContributionProgress: { type: number }
+    InvestmentGoalInput:
+      type: object
+      required: [name, targetAmount, monthlyPlannedContribution, targetDate]
+      properties:
+        accountId: { type: ["number", "null"] }
+        name: { type: string, minLength: 1 }
+        targetAmount: { type: number, minimum: 0 }
+        monthlyPlannedContribution: { type: number, minimum: 0 }
+        targetDate: { type: string }
+    InvestmentGoalUpdate:
+      type: object
+      properties:
+        accountId: { type: ["number", "null"] }
+        name: { type: string, minLength: 1 }
+        targetAmount: { type: number, minimum: 0 }
+        monthlyPlannedContribution: { type: number, minimum: 0 }
+        targetDate: { type: string }
+    InvestmentTargetAllocation:
+      type: object
+      required: [id, accountId, securityId, ticker, securityName, monthlyAmount]
+      properties:
+        id: { type: number }
+        accountId: { type: number }
+        securityId: { type: number }
+        ticker: { type: string }
+        securityName: { type: string }
+        monthlyAmount: { type: number }
+    InvestmentTargetAllocationInput:
+      type: object
+      required: [accountId, ticker, securityName, monthlyAmount]
+      properties:
+        accountId: { type: number }
+        ticker: { type: string, minLength: 1 }
+        securityName: { type: string, minLength: 1 }
+        monthlyAmount: { type: number, minimum: 0 }
+    InvestmentTargetAllocationUpdate:
+      type: object
+      properties:
+        monthlyAmount: { type: number, minimum: 0 }
+    InvestmentSummary:
+      type: object
+      required: [portfolioValue, monthlyContribution, netContributions, investmentGrowth, goalProgress]
+      properties:
+        portfolioValue: { type: number }
+        monthlyContribution: { type: number }
+        netContributions: { type: number }
+        investmentGrowth: { type: number }
+        goalProgress: { type: number }
+    InvestmentOverview:
+      type: object
+      required: [summary, accounts, holdings, transactions, goals, allocations]
+      properties:
+        summary:
+          $ref: "#/components/schemas/InvestmentSummary"
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvestmentAccount"
+        holdings:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvestmentHolding"
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvestmentTransaction"
+        goals:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvestmentGoal"
+        allocations:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvestmentTargetAllocation"
+    InvestmentPlanSyncResult:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
     CategoryActual:
       type: object
       required: [category, planned, actual, remaining]
@@ -824,7 +1302,7 @@ components:
         remaining: { type: number }
     DashboardSummary:
       type: object
-      required: [month, incomePlanned, incomeActual, plannedExpenses, actualExpenses, remaining, cashFlow, reviewCount, pendingCount, byCategory]
+      required: [month, incomePlanned, incomeActual, plannedExpenses, actualExpenses, remaining, cashFlow, reviewCount, pendingCount, byCategory, investment]
       properties:
         month: { type: string }
         incomePlanned: { type: number }
@@ -839,6 +1317,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CategoryActual"
+        investment:
+          $ref: "#/components/schemas/InvestmentSummary"
     ReconciliationRow:
       type: object
       required: [category, manualTotal, bankTotal, difference, status]
