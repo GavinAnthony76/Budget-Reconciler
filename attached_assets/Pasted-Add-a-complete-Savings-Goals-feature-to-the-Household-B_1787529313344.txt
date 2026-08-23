@@ -1,0 +1,296 @@
+Add a complete Savings Goals feature to the Household Budget / Budget Reconciler app.
+
+Before changing anything, inspect the existing database schema, API conventions, generated API client, dashboard, investment tracking, settings, authentication, and month/currency utilities. Reuse the existing architecture and visual design. Do not duplicate logic already used for investments, budgeting, date handling, or charts.
+
+Objective
+
+Users should be able to create and track savings goals with a target amount and timeline. The app should calculate the monthly savings required, compare actual progress with the expected trajectory, and recommend adjustments on the dashboard.
+
+Savings goal data model
+
+Support multiple savings goals. Each goal should contain:
+
+- ID and authenticated user/household ownership
+- Name, such as “Emergency Fund” or “House Deposit”
+- Optional description
+- Start date
+- End date
+- Target amount
+- Starting balance at the beginning of the goal
+- Current saved amount
+- Optional monthly planned contribution override
+- Priority: High, Medium, or Low
+- Status: Active, Completed, Paused, or Archived
+- Created and updated timestamps
+
+The user must be able to define the timeline using either:
+
+1. A start date and end date, or
+2. A start date and duration expressed in months or years
+
+Keep the end date and duration synchronized. Store a canonical end date in the database.
+
+Validation
+
+- Target amount must be greater than zero.
+- End date must be after the start date.
+- Duration must be at least one month.
+- Starting balance and contributions cannot be negative.
+- Current saved amount may exceed the target.
+- Currency calculations must avoid floating-point errors. Follow the project’s existing money-storage convention; otherwise, store money as integer cents.
+- Savings goals and contributions must be scoped to the authenticated user or household.
+
+Savings contributions
+
+Create a contribution history for each goal rather than only overwriting its current balance.
+
+Each contribution should include:
+
+- Goal ID
+- Contribution date
+- Amount
+- Optional note
+- Optional source, such as Manual, Budget Surplus, Transfer, or Adjustment
+- Created timestamp
+
+Allow users to:
+
+- Add a contribution
+- Edit or delete a contribution
+- Make a balance adjustment
+- View contribution history
+
+Calculate the current saved amount from the starting balance plus contributions and adjustments whenever practical, so history remains auditable.
+
+Core calculations
+
+For each active goal, calculate:
+
+- Amount remaining:
+  max(target amount - current saved amount, 0)
+
+- Total goal duration in months
+
+- Months elapsed
+
+- Months remaining, including the current contribution period where appropriate
+
+- Required monthly contribution:
+  amount remaining / months remaining
+
+- Original required monthly contribution:
+  (target amount - starting balance) / total goal months
+
+- Expected saved amount as of today using a linear trajectory:
+  starting balance + ((target amount - starting balance) × elapsed fraction)
+
+- Progress percentage:
+  current saved amount / target amount × 100
+
+- Time progress percentage:
+  elapsed time / total duration × 100
+
+- Variance from trajectory:
+  current saved amount - expected saved amount
+
+- Projected completion date based on the recent average monthly contribution
+
+- Projected balance by the target date
+
+- Recommended monthly contribution from now onward
+
+Trajectory status should be one of:
+
+- Ahead
+- On track
+- Slightly behind
+- Behind
+- Completed
+- Overdue
+- Insufficient history
+
+Use reasonable documented thresholds. For example, “On track” may be within 5% of the expected balance, but centralize the thresholds so they can be changed later.
+
+Edge cases
+
+Handle all of the following correctly:
+
+- Goal starts in the future
+- Goal ends during the current month
+- Goal is overdue
+- Goal has no contribution history
+- Goal is already fully funded
+- Goal is overfunded
+- Goal is paused
+- Start or end date is edited
+- Target amount increases or decreases
+- Current contribution rate is zero
+- Duration is entered in years but does not divide evenly into months
+- Very short goals
+- Contributions made before or after the formal goal period
+- Multiple goals competing for the same available monthly savings
+
+Use the app’s existing budget-month/pay-cycle conventions where applicable. Do not silently treat savings contributions as expenses unless the project already models transfers that way.
+
+Recommendations
+
+Add a recommendation engine that produces clear, actionable messages, such as:
+
+- “Save $425 per month to reach Emergency Fund by June 2027.”
+- “You are $680 ahead of schedule.”
+- “You are $310 behind. Increase your monthly contribution by $52.”
+- “At your current pace, you will reach this goal in September 2027, three months late.”
+- “This goal is complete.”
+- “The required contribution exceeds your projected monthly surplus.”
+
+When budget data is available:
+
+- Compare the required monthly savings with projected monthly surplus.
+- Show whether the goal is currently affordable.
+- If several goals are active, show the combined required monthly contribution.
+- Warn when combined goal contributions exceed available monthly surplus.
+- Recommend allocations based on priority and deadline.
+- Do not automatically change the user’s budget or move money without confirmation.
+
+User interface
+
+Add a “Savings Goals” item to the main navigation.
+
+Create a Savings Goals page containing:
+
+- Summary cards:
+  - Total saved
+  - Total target
+  - Combined amount remaining
+  - Combined required monthly savings
+- Active goal cards with:
+  - Goal name
+  - Saved amount and target amount
+  - Progress bar
+  - Target date
+  - Required monthly contribution
+  - Trajectory status
+  - Projected completion date
+- Controls to create, edit, pause, archive, and delete a goal
+- A goal detail view or expandable panel
+- Contribution history and an “Add contribution” action
+- Empty, loading, error, and completed states
+- Responsive mobile and desktop layouts
+
+Goal form
+
+Include:
+
+- Name
+- Description
+- Target amount
+- Starting balance
+- Start date
+- Timeline input mode:
+  - End date
+  - Duration
+- Duration value
+- Duration unit: Months or Years
+- Optional planned monthly contribution
+- Priority
+- Status
+
+When the user changes the target, dates, duration, starting balance, or planned contribution, show a live calculation preview containing:
+
+- Required monthly contribution
+- Target date
+- Estimated completion date
+- Whether the plan appears affordable based on current budget surplus
+
+Charts
+
+Add a savings trajectory chart similar in quality and behavior to the existing investment visualization.
+
+The chart should display:
+
+- Expected savings trajectory from start date to target date
+- Actual contribution/balance history
+- Projected trajectory based on the current contribution pace
+- Target amount reference line
+- Today marker
+- Clear legend and tooltips
+
+Use the project’s existing charting library and design system. Ensure the chart handles sparse contribution data and future dates.
+
+Dashboard integration
+
+Add a Savings Goals dashboard section showing:
+
+- Primary or highest-priority active goal
+- Current saved amount and progress percentage
+- Required monthly contribution
+- Ahead/behind amount
+- Projected completion date
+- A compact trajectory chart
+- The most important current recommendation
+- Combined monthly amount needed across all active goals
+- Warning if required savings exceed projected surplus
+- Link to the full Savings Goals page
+
+If no goals exist, show a useful call to action rather than an empty chart.
+
+Backend and API
+
+Implement authenticated CRUD endpoints for:
+
+- Listing savings goals
+- Getting one savings goal with calculations
+- Creating a goal
+- Updating a goal
+- Pausing, completing, or archiving a goal
+- Deleting a goal with an appropriate confirmation flow
+- Listing contributions
+- Adding a contribution
+- Updating a contribution
+- Deleting a contribution
+- Getting the savings summary and dashboard recommendations
+
+Follow the project’s existing Express, Zod, Drizzle, OpenAPI, and generated React Query client patterns. Update the API specification and regenerate the client rather than adding hand-written frontend fetch calls.
+
+Database
+
+Add properly scoped Drizzle tables and migrations for goals and contributions. Include appropriate foreign keys, indexes, ownership constraints, timestamps, and deletion behavior. Preserve existing data and do not make destructive schema changes.
+
+Testing
+
+Add tests for:
+
+- Date-to-duration conversion
+- Required monthly contribution
+- Expected trajectory
+- Ahead/behind status
+- Projected completion date
+- Overdue and completed goals
+- Contribution aggregation
+- Editing dates or targets
+- Multiple-goal affordability
+- User/household data isolation
+- API validation and authorization
+
+Acceptance criteria
+
+The work is complete when:
+
+1. A user can create a goal using either an end date or a duration.
+2. The calculated end date and monthly savings requirement are correct.
+3. Contributions update the balance and preserve history.
+4. The app shows expected, actual, and projected trajectories.
+5. The dashboard provides actionable recommendations.
+6. Multiple goals and combined affordability are handled.
+7. All endpoints require authentication and enforce ownership.
+8. API schemas and generated hooks are updated.
+9. Existing investment, transaction, reconciliation, and budgeting features still work.
+10. Type checking, tests, and production build pass.
+
+After implementation, summarize:
+
+- Files and schema changed
+- Calculation assumptions
+- API endpoints added
+- Tests performed
+- Any required environment variables or migration commands
