@@ -16,6 +16,7 @@ import { useGetSettings, useListMonths, useUpdateSettings, getGetSettingsQueryKe
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useClerk, useUser } from "@clerk/react";
+import { useToast } from "@/hooks/use-toast";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { signOut } = useClerk();
@@ -24,6 +25,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: settings } = useGetSettings();
   const { data: months } = useListMonths();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const updateSettingsMutation = useUpdateSettings({
@@ -47,8 +49,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 
-  const handleExport = () => {
-    window.open(`${import.meta.env.BASE_URL}api/export`, "_blank");
+  const handleExport = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.BASE_URL}api/export`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || `Export failed (${response.status})`);
+      }
+      const workbook = await response.blob();
+      const url = URL.createObjectURL(workbook);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "ledger-budget.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({
+        title: "Could not export workbook",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
