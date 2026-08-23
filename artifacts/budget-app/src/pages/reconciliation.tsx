@@ -7,8 +7,9 @@ import {
   getListTransactionsQueryKey,
 } from "@workspace/api-client-react";
 import type { Transaction } from "@workspace/api-client-react";
-import { formatCurrency, PageHeader, Skeleton, Card, CardContent, Badge } from "@/components/ui/core";
-import { CheckCircle2, AlertTriangle, Scale, ChevronDown, ChevronRight } from "lucide-react";
+import { formatCurrency, PageHeader, Skeleton, Card, CardContent, Badge, Button } from "@/components/ui/core";
+import { CheckCircle2, AlertTriangle, Scale, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 /** Mirrors the server's reconciliation bucketing: included expenses only. */
 function categoryTransactions(txns: Transaction[], category: string) {
@@ -60,8 +61,10 @@ export default function Reconciliation() {
   const { data: settings } = useGetSettings();
   const selectedMonth = settings?.selectedMonth;
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [isReconciling, setIsReconciling] = useState(false);
+  const { toast } = useToast();
 
-  const { data: reconciliationData, isLoading } = useGetReconciliation(
+  const reconciliationQuery = useGetReconciliation(
     { month: selectedMonth },
     { 
       query: { 
@@ -71,7 +74,7 @@ export default function Reconciliation() {
     }
   );
 
-  const { data: monthTxns } = useListTransactions(
+  const monthTransactionsQuery = useListTransactions(
     { month: selectedMonth },
     {
       query: {
@@ -80,6 +83,39 @@ export default function Reconciliation() {
       },
     }
   );
+
+  const handleReconcile = async () => {
+    if (!selectedMonth || isReconciling) return;
+    setIsReconciling(true);
+    try {
+      const [reconciliationResult] = await Promise.all([
+        reconciliationQuery.refetch(),
+        monthTransactionsQuery.refetch(),
+      ]);
+      const discrepancyCount = (reconciliationResult.data ?? []).filter(
+        (row) => row.status === "Investigate",
+      ).length;
+      toast({
+        title: "Reconciliation refreshed",
+        description:
+          discrepancyCount === 0
+            ? `${selectedMonth} is all matched.`
+            : `${discrepancyCount} ${discrepancyCount === 1 ? "discrepancy needs" : "discrepancies need"} investigation.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Reconciliation failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
+  const reconciliationData = reconciliationQuery.data;
+  const monthTxns = monthTransactionsQuery.data;
+  const isLoading = reconciliationQuery.isLoading;
 
   if (isLoading || !selectedMonth) {
     return (
@@ -100,7 +136,7 @@ export default function Reconciliation() {
           title="Reconciliation" 
           description={`Audit trail for ${selectedMonth}`}
         />
-        <div className="mb-8 relative z-10 w-full sm:w-auto animate-in fade-in slide-in-from-right-4 duration-500 delay-200">
+        <div className="mb-8 relative z-10 w-full sm:w-auto flex flex-col items-stretch sm:items-end gap-3 animate-in fade-in slide-in-from-right-4 duration-500 delay-200">
           {needsInvestigation === 0 ? (
             <div className="flex items-center justify-center sm:justify-start gap-3 text-chart-4 bg-chart-4/10 px-5 py-3 rounded-xl border border-chart-4/20 shadow-[0_0_15px_rgba(0,255,100,0.1)]">
               <CheckCircle2 size={20} className="drop-shadow-[0_0_8px_rgba(0,255,100,0.5)]" />
@@ -112,6 +148,17 @@ export default function Reconciliation() {
               <span className="font-bold font-display tracking-wide uppercase text-sm">{needsInvestigation} discrepancies</span>
             </div>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleReconcile}
+            disabled={isReconciling}
+            className="w-full sm:w-auto"
+            aria-label={`Reconcile ${selectedMonth} now`}
+          >
+            <RefreshCw size={15} className={`mr-2 ${isReconciling ? "animate-spin" : ""}`} />
+            {isReconciling ? "Reconciling…" : "Reconcile now"}
+          </Button>
         </div>
       </div>
 
