@@ -49,7 +49,7 @@ const clerkAppearance = {
   options: {
     logoPlacement: 'inside' as const,
     logoLinkUrl: basePath || '/',
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+    logoImageUrl: `${window.location.origin}${basePath}/logo.png`,
   },
   variables: {
     colorPrimary: '#62E6C3',
@@ -98,7 +98,7 @@ function Welcome() {
       <div className="absolute -top-32 -left-20 h-96 w-96 rounded-full bg-primary/25 blur-[120px]" />
       <div className="absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-accent/20 blur-[120px]" />
       <section className="glass-panel relative w-full max-w-xl p-8 sm:p-12 rounded-3xl border border-white/10 text-center shadow-2xl">
-         <img src={`${basePath}/logo.svg`} alt="Ledger" className="mx-auto h-16 w-16 mb-7 drop-shadow-[0_0_25px_rgba(98,230,195,0.35)]" />
+         <img src={`${basePath}/logo.png`} alt="Ledger" className="mx-auto h-16 w-16 mb-7 drop-shadow-[0_0_25px_rgba(98,230,195,0.35)]" />
         <p className="text-primary font-mono text-xs uppercase tracking-[0.25em] mb-4">Private household finance</p>
         <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight">Your money, clearly organized.</h1>
         <p className="mt-5 text-white/65 leading-7">Ledger keeps your budget, spending plan, and transaction history private and ready for you.</p>

@@ -22,3 +22,17 @@ mtime_ms = 1787510915373
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:36eee2a6-4b47-4582-8522-692fa1ffffaf/b0e9aec0-ce5d-4b3f-bc2b-b548e5b48c4d/30d6a62b-9e0e-4f2b-9575-9dc716e13a8c"
 storage_version_token = "1787511000413166"
 content_type = "image/svg+xml"
+
+[[outputs]]
+id = "_l9jtLCZa5xH0WpIUcRbK"
+uri = "file://artifacts/budget-app/public/logo.png"
+type = "image"
+title = "Ledger Loop app icon — PNG"
+description = "1024×1024 PNG app icon, 1.92 MB, under the 4 MB requirement."
+logical_id = "8f1b7f87-f22b-4905-adc0-a9b9ae7b7811"
+content_hash = "sha256:0e9baa47821899d2a0987aae83224bcb431d953cf30e35b445e7e2634139ba41"
+size = 1918230
+mtime_ms = 1787511063944
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:36eee2a6-4b47-4582-8522-692fa1ffffaf/8f1b7f87-f22b-4905-adc0-a9b9ae7b7811/7d6d9bb5-b59e-458b-9c96-c96f6fd42b38"
+storage_version_token = "1787511094290103"
+content_type = "image/png"
