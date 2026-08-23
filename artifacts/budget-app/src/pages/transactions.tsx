@@ -78,7 +78,7 @@ export default function Transactions() {
           {[
             { id: "all", label: "All" },
             { id: "review", label: "Needs Review" },
-            { id: "bank", label: "Bank Data" },
+            { id: "bank", label: "Imported CSV" },
             { id: "manual", label: "Manual" }
           ].map(f => (
             <button
@@ -444,8 +444,8 @@ function DeleteTxnButton({ id, source, queryParams }: { id: number, source: stri
           title: "Deleted",
           description:
             source === "bank"
-              ? "Bank transaction and its linked spending entry removed."
-              : "Transaction removed (and its linked bank row, if any).",
+              ? "Imported CSV transaction and its linked spending entry removed."
+              : "Transaction removed (and its linked imported row, if any).",
         });
       }
     }
@@ -460,8 +460,8 @@ function DeleteTxnButton({ id, source, queryParams }: { id: number, source: stri
         if (
           confirm(
             source === "bank"
-              ? "Delete this bank transaction? Its linked spending entry will be removed too, so dashboard and reconciliation stay in sync."
-              : "Delete this transaction? If it is linked to an imported bank row, that row will be removed too.",
+              ? "Delete this imported CSV transaction? Its linked spending entry will be removed too, so dashboard and reconciliation stay in sync."
+              : "Delete this transaction? If it is linked to an imported CSV row, that row will be removed too.",
           )
         ) {
           deleteMutation.mutate({ id });

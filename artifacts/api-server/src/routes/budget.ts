@@ -60,8 +60,28 @@ async function getOrCreateSettings(userId: string) {
     .where(eq(settingsTable.userId, userId))
     .limit(1);
   if (existing) return existing;
-  const [created] = await db.insert(settingsTable).values({ userId }).returning();
-  return created;
+
+  // Initial page load requests settings from several routes at once. The
+  // database enforces one settings row per signed-in user, so a parallel
+  // request may create it first. Treat that as a successful initialization
+  // rather than surfacing a transient 500 to the browser.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const [created] = await db
+      .insert(settingsTable)
+      .values({ userId })
+      .onConflictDoNothing()
+      .returning();
+    if (created) return created;
+
+    const [createdByParallelRequest] = await db
+      .select()
+      .from(settingsTable)
+      .where(eq(settingsTable.userId, userId))
+      .limit(1);
+    if (createdByParallelRequest) return createdByParallelRequest;
+  }
+
+  throw new Error("Could not initialize settings for the signed-in user");
 }
 
 router.get("/settings", async (req, res): Promise<void> => {

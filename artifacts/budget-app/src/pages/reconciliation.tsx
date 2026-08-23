@@ -131,7 +131,7 @@ export default function Reconciliation() {
             <thead className="bg-white/5 text-white/50 text-xs uppercase tracking-wider font-display border-b border-white/10">
               <tr>
                 <th className="px-6 py-4 font-bold">Category</th>
-                <th className="px-6 py-4 font-bold text-right">Bank Statement</th>
+                <th className="px-6 py-4 font-bold text-right">Imported CSV</th>
                 <th className="px-6 py-4 font-bold text-right">Ledger Data</th>
                 <th className="px-6 py-4 font-bold text-right">Difference</th>
                 <th className="px-6 py-4 font-bold text-center">Status</th>
@@ -182,7 +182,7 @@ export default function Reconciliation() {
                         <td colSpan={5} className="px-6 py-5 whitespace-normal">
                           {detail ? (
                             <div className="flex flex-col md:flex-row gap-6 md:gap-10">
-                              <DetailList title="Bank statement" items={detail.bank} accent="text-white/50" />
+                              <DetailList title="Imported CSV" items={detail.bank} accent="text-white/50" />
                               <DetailList title="Ledger entries" items={detail.manual} accent="text-primary" />
                             </div>
                           ) : (
@@ -218,7 +218,7 @@ export default function Reconciliation() {
             </h4>
             <ul className="list-disc list-outside text-white/70 space-y-2 ml-14 mt-4 relative z-10">
               <li>Check the <a href="/transactions" className="text-primary hover:text-primary/80 font-bold hover:underline underline-offset-4 decoration-primary/50 transition-all">Ledger</a> for missing manual entries (like cash purchases).</li>
-              <li>Ensure all imported bank transactions are properly categorized.</li>
+              <li>Ensure all imported CSV transactions are properly categorized.</li>
               <li>Verify that "Include in Budget" toggles on transactions are set correctly.</li>
             </ul>
           </CardContent>

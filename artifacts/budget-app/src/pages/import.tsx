@@ -51,7 +51,7 @@ export default function ImportReview() {
     <div className="space-y-8 animate-in fade-in duration-700">
       <PageHeader 
         title="Import CSV" 
-        description="Sync your bank statements with Ledger"
+        description="Bring bank statement CSVs into Ledger"
       />
 
       <div className="glass-panel border-l-4 border-l-secondary rounded-2xl p-5 relative overflow-hidden group mb-8">
@@ -61,9 +61,9 @@ export default function ImportReview() {
             <Landmark size={16} />
           </div>
           <span className="mt-1 leading-relaxed">
-            Upload as many files from as many bank accounts as you like — each
-            file is matched to its account automatically (Account 1, Account 2, …)
-            so overlapping downloads dedupe correctly and identical transactions
+            Upload CSV files from as many bank accounts as you like — each file is
+            matched to its account automatically (Account 1, Account 2, …) so
+            overlapping downloads dedupe correctly and identical transactions
             from different accounts are all kept.
           </span>
         </div>
@@ -91,7 +91,7 @@ export default function ImportReview() {
           <div className={`h-24 w-24 rounded-full flex items-center justify-center mx-auto mb-6 transition-all duration-500 relative z-10 ${isDragging ? "bg-primary/30 text-primary scale-110 shadow-[0_0_20px_rgba(28,216,210,0.5)]" : "bg-white/10 text-white/60"}`}>
             <UploadCloud size={40} className={isDragging ? "animate-bounce" : ""} />
           </div>
-          <h3 className="font-display text-2xl font-bold mb-3 text-white relative z-10">Drop Bank CSV here</h3>
+          <h3 className="font-display text-2xl font-bold mb-3 text-white relative z-10">Drop a bank CSV here</h3>
           <p className="text-white/50 mb-8 max-w-md mx-auto text-lg relative z-10">
             We'll automatically identify duplicates, match existing rules, and queue new items.
           </p>
