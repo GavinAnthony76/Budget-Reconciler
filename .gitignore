@@ -47,3 +47,12 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# Local tooling artifacts
+.playwright-mcp/
+.pnpm-store/

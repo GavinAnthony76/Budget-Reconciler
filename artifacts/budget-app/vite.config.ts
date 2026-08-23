@@ -72,6 +72,17 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // Outside Replit there's no platform router to send /api to the API
+    // server's own port, so proxy it locally instead.
+    proxy:
+      process.env.REPL_ID === undefined
+        ? {
+            '/api': {
+              target: `http://127.0.0.1:${process.env.API_PORT ?? 8080}`,
+              changeOrigin: true,
+            },
+          }
+        : undefined,
   },
   preview: {
     port,
