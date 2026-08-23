@@ -118,10 +118,16 @@ router.get("/reconciliation", async (req, res): Promise<void> => {
   }
   const settings = await getOrCreateSettings(userId);
   const month = q.data.month ?? settings.selectedMonth;
-  const txns = await db
-    .select()
-    .from(transactionsTable)
-    .where(and(eq(transactionsTable.month, month), eq(transactionsTable.userId, userId)));
+  const [txns, planLines] = await Promise.all([
+    db
+      .select()
+      .from(transactionsTable)
+      .where(and(eq(transactionsTable.month, month), eq(transactionsTable.userId, userId))),
+    db
+      .select()
+      .from(planLinesTable)
+      .where(and(eq(planLinesTable.month, month), eq(planLinesTable.userId, userId))),
+  ]);
 
   const manual = new Map<string, number>();
   const bank = new Map<string, number>();
@@ -135,15 +141,33 @@ router.get("/reconciliation", async (req, res): Promise<void> => {
     }
   }
   const cats = [...new Set([...manual.keys(), ...bank.keys()])].sort();
-  const rows = cats.map((category) => {
+  const plannedByCategory = new Map<string, number>();
+  for (const line of planLines) {
+    plannedByCategory.set(
+      line.category,
+      (plannedByCategory.get(line.category) ?? 0) + line.planned,
+    );
+  }
+  const categories = [...new Set([...cats, ...plannedByCategory.keys()])].sort();
+  const rows = categories.map((category) => {
     const manualTotal = manual.get(category) ?? 0;
     const bankTotal = bank.get(category) ?? 0;
     const difference = manualTotal - bankTotal;
+    const planned = plannedByCategory.get(category) ?? 0;
+    const budgetVariance = manualTotal - planned;
     return {
       category,
       manualTotal,
       bankTotal,
       difference,
+      planned,
+      budgetVariance,
+      budgetStatus:
+        budgetVariance > 0.01
+          ? "Over budget"
+          : planned === 0
+            ? "No plan"
+            : "On track",
       status: Math.abs(difference) < 0.01 ? "Matched" : "Investigate",
     };
   });

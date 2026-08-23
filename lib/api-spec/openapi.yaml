@@ -1321,10 +1321,13 @@ components:
           $ref: "#/components/schemas/InvestmentSummary"
     ReconciliationRow:
       type: object
-      required: [category, manualTotal, bankTotal, difference, status]
+      required: [category, planned, manualTotal, bankTotal, difference, budgetVariance, budgetStatus, status]
       properties:
         category: { type: string }
+        planned: { type: number }
         manualTotal: { type: number }
         bankTotal: { type: number }
         difference: { type: number }
+        budgetVariance: { type: number }
+        budgetStatus: { type: string }
         status: { type: string }

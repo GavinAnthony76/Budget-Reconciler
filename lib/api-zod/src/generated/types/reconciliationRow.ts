@@ -8,8 +8,11 @@
 
 export interface ReconciliationRow {
   category: string;
+  planned: number;
   manualTotal: number;
   bankTotal: number;
   difference: number;
+  budgetVariance: number;
+  budgetStatus: string;
   status: string;
 }

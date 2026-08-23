@@ -19,7 +19,7 @@ function categoryTransactions(txns: Transaction[], category: string) {
     if (!t.include || t.amount >= 0) continue;
     const c = t.category ?? "Miscellaneous";
     if (c !== category) continue;
-    if (t.source === "manual") manual.push(t);
+    if (t.source === "manual" || t.source === "investment") manual.push(t);
     else if ((t.status ?? "").trim().toUpperCase() === "POSTED") bank.push(t);
   }
   const byDate = (a: Transaction, b: Transaction) => a.date.localeCompare(b.date);
@@ -95,12 +95,22 @@ export default function Reconciliation() {
       const discrepancyCount = (reconciliationResult.data ?? []).filter(
         (row) => row.status === "Investigate",
       ).length;
+      const overBudgetCount = (reconciliationResult.data ?? []).filter(
+        (row) => row.budgetStatus === "Over budget",
+      ).length;
       toast({
         title: "Reconciliation refreshed",
         description:
-          discrepancyCount === 0
-            ? `${selectedMonth} is all matched.`
-            : `${discrepancyCount} ${discrepancyCount === 1 ? "discrepancy needs" : "discrepancies need"} investigation.`,
+          discrepancyCount === 0 && overBudgetCount === 0
+            ? `${selectedMonth}: sources matched and budget is on track.`
+            : [
+                discrepancyCount > 0
+                  ? `${discrepancyCount} ${discrepancyCount === 1 ? "source discrepancy" : "source discrepancies"} need investigation`
+                  : "sources match",
+                overBudgetCount > 0
+                  ? `${overBudgetCount} ${overBudgetCount === 1 ? "category is" : "categories are"} over budget`
+                  : "budget is on track",
+              ].join("; ") + ".",
       });
     } catch (error) {
       toast({
@@ -134,20 +144,30 @@ export default function Reconciliation() {
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
         <PageHeader 
           title="Reconciliation" 
-          description={`Audit trail for ${selectedMonth}`}
+          description={`Compare imported transactions, ledger entries, and budget plan for ${selectedMonth}`}
         />
         <div className="mb-8 relative z-10 w-full sm:w-auto flex flex-col items-stretch sm:items-end gap-3 animate-in fade-in slide-in-from-right-4 duration-500 delay-200">
-          {needsInvestigation === 0 ? (
-            <div className="flex items-center justify-center sm:justify-start gap-3 text-chart-4 bg-chart-4/10 px-5 py-3 rounded-xl border border-chart-4/20 shadow-[0_0_15px_rgba(0,255,100,0.1)]">
-              <CheckCircle2 size={20} className="drop-shadow-[0_0_8px_rgba(0,255,100,0.5)]" />
-              <span className="font-bold font-display tracking-wide uppercase text-sm">All matched</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center sm:justify-start gap-3 text-destructive bg-destructive/10 px-5 py-3 rounded-xl border border-destructive/20 shadow-[0_0_15px_rgba(255,50,50,0.15)]">
-              <AlertTriangle size={20} className="drop-shadow-[0_0_8px_rgba(255,50,50,0.5)]" />
-              <span className="font-bold font-display tracking-wide uppercase text-sm">{needsInvestigation} discrepancies</span>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {needsInvestigation === 0 ? (
+              <div className="flex items-center justify-center sm:justify-start gap-3 text-chart-4 bg-chart-4/10 px-5 py-3 rounded-xl border border-chart-4/20 shadow-[0_0_15px_rgba(0,255,100,0.1)]">
+                <CheckCircle2 size={20} className="drop-shadow-[0_0_8px_rgba(0,255,100,0.5)]" />
+                <span className="font-bold font-display tracking-wide uppercase text-sm">Sources matched</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center sm:justify-start gap-3 text-destructive bg-destructive/10 px-5 py-3 rounded-xl border border-destructive/20 shadow-[0_0_15px_rgba(255,50,50,0.15)]">
+                <AlertTriangle size={20} className="drop-shadow-[0_0_8px_rgba(255,50,50,0.5)]" />
+                <span className="font-bold font-display tracking-wide uppercase text-sm">{needsInvestigation} source discrepancies</span>
+              </div>
+            )}
+            {rows.filter((row) => row.budgetStatus === "Over budget").length > 0 && (
+              <div className="flex items-center justify-center gap-3 text-destructive bg-destructive/10 px-5 py-3 rounded-xl border border-destructive/20">
+                <AlertTriangle size={20} />
+                <span className="font-bold font-display tracking-wide uppercase text-sm">
+                  {rows.filter((row) => row.budgetStatus === "Over budget").length} over budget
+                </span>
+              </div>
+            )}
+          </div>
           <Button
             size="sm"
             variant="outline"
@@ -178,9 +198,10 @@ export default function Reconciliation() {
             <thead className="bg-white/5 text-white/50 text-xs uppercase tracking-wider font-display border-b border-white/10">
               <tr>
                 <th className="px-6 py-4 font-bold">Category</th>
+                <th className="px-6 py-4 font-bold text-right">Budget Plan</th>
                 <th className="px-6 py-4 font-bold text-right">Imported CSV</th>
                 <th className="px-6 py-4 font-bold text-right">Ledger Data</th>
-                <th className="px-6 py-4 font-bold text-right">Difference</th>
+                <th className="px-6 py-4 font-bold text-right">Budget Variance</th>
                 <th className="px-6 py-4 font-bold text-center">Status</th>
               </tr>
             </thead>
@@ -201,32 +222,40 @@ export default function Reconciliation() {
                           {row.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right font-mono text-white/50">
+                        <td className="px-6 py-4 text-right font-mono text-white/50">
+                          {formatCurrency(Math.abs(row.planned))}
+                        </td>
+                        <td className="px-6 py-4 text-right font-mono text-white/50">
                         {formatCurrency(Math.abs(row.bankTotal))}
                       </td>
                       <td className="px-6 py-4 text-right font-mono text-white/90 font-bold">
                         {formatCurrency(Math.abs(row.manualTotal))}
                       </td>
                       <td className="px-6 py-4 text-right font-mono font-bold">
-                        {Math.abs(row.difference) > 0 ? (
-                          <span className={row.status === 'Investigate' ? 'text-destructive drop-shadow-[0_0_8px_rgba(255,50,50,0.5)]' : 'text-primary'}>
-                            {formatCurrency(row.difference)}
+                        {Math.abs(row.budgetVariance) > 0 ? (
+                          <span className={row.budgetStatus === "Over budget" ? 'text-destructive drop-shadow-[0_0_8px_rgba(255,50,50,0.5)]' : 'text-chart-4'}>
+                            {row.budgetVariance > 0 ? "+" : ""}{formatCurrency(row.budgetVariance)}
                           </span>
                         ) : (
                           <span className="text-white/20 font-normal">$0.00</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        {row.status === "Matched" ? (
-                          <Badge variant="success" className="bg-chart-4/10 text-chart-4 border-chart-4/20 shadow-none">Matched</Badge>
-                        ) : (
-                          <Badge variant="destructive" className="bg-destructive/20 text-destructive border-destructive/30 shadow-[0_0_10px_rgba(255,50,50,0.3)]">Investigate</Badge>
-                        )}
+                        <div className="flex flex-col items-center gap-1.5">
+                          {row.status === "Matched" ? (
+                            <Badge variant="success" className="bg-chart-4/10 text-chart-4 border-chart-4/20 shadow-none">Sources matched</Badge>
+                          ) : (
+                            <Badge variant="destructive" className="bg-destructive/20 text-destructive border-destructive/30 shadow-[0_0_10px_rgba(255,50,50,0.3)]">Investigate</Badge>
+                          )}
+                          {row.budgetStatus === "Over budget" && (
+                            <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 shadow-none">Over budget</Badge>
+                          )}
+                        </div>
                       </td>
                     </tr>
                     {isOpen && (
                       <tr className="bg-black/20" data-testid={`detail-audit-${row.category}`}>
-                        <td colSpan={5} className="px-6 py-5 whitespace-normal">
+                         <td colSpan={6} className="px-6 py-5 whitespace-normal">
                           {detail ? (
                             <div className="flex flex-col md:flex-row gap-6 md:gap-10">
                               <DetailList title="Imported CSV" items={detail.bank} accent="text-white/50" />

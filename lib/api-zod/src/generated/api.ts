@@ -1041,9 +1041,12 @@ export const GetReconciliationQueryParams = zod.object({
 
 export const GetReconciliationResponseItem = zod.object({
   "category": zod.string(),
+  "planned": zod.number(),
   "manualTotal": zod.number(),
   "bankTotal": zod.number(),
   "difference": zod.number(),
+  "budgetVariance": zod.number(),
+  "budgetStatus": zod.string(),
   "status": zod.string()
 })
 export const GetReconciliationResponse = zod.array(GetReconciliationResponseItem)
