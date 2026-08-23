@@ -1,0 +1,206 @@
+Implement these now:
+
+1. Manual investment tracker
+2. Investment goals
+3. Budget integration
+
+Do NOT implement brokerage synchronization yet.
+Do NOT implement AI investment analysis yet.
+
+The investment feature should be usable immediately with manual data entry and should be designed so Schwab synchronization can be added later without redesigning the data model.
+
+Required functionality:
+
+INVESTMENT ACCOUNTS
+- Create/edit/delete an investment account
+- Initial account: Charles Schwab taxable brokerage
+- Track account name, institution, type, and cash balance
+
+HOLDINGS
+For each holding track:
+- ticker
+- security name
+- shares
+- average cost
+- cost basis
+- current price
+- current market value
+- unrealized gain/loss $
+- unrealized gain/loss %
+- portfolio allocation %
+
+Initial planned holdings:
+- MSFT
+- GOOGL
+- AMZN
+- VTI
+- BRK.B
+- NVDA
+
+MONTHLY INVESTMENT PLAN
+Initial planned contribution:
+$300/month
+
+Initial target allocation:
+- MSFT $80
+- GOOGL $70
+- AMZN $60
+- VTI $50
+- BRK.B $25
+- NVDA $15
+
+These values must be editable.
+
+INVESTMENT GOAL
+Create a goal:
+- Name: $25K Investment Goal
+- Target: $25,000
+- Monthly planned contribution: $300
+- Horizon: approximately 5 years
+- Account: Schwab taxable brokerage
+
+Show:
+- current portfolio value
+- contributions to date
+- investment growth
+- remaining amount to target
+- percent complete
+- target date
+- monthly contribution progress
+
+IMPORTANT:
+Separate contribution dollars from market gains.
+
+Example:
+Contributions = $5,000
+Current value = $5,750
+Investment growth = $750
+
+Do not treat the whole $5,750 as savings contributed.
+
+BUDGET INTEGRATION
+
+Add investment contributions to the existing Budget Plan.
+
+Preferred structure:
+
+Top-level category:
+Investments
+
+Subcategory:
+Brokerage Contribution
+
+September planned amount:
+$300
+
+This should appear clearly in:
+- Budget Plan
+- Budget vs Actual
+- dashboard totals
+
+The $300 household transfer into Schwab is the budget event.
+
+Do NOT count the stock purchases again as expenses.
+
+Example:
+
+USAA checking -> Schwab $300
+= household investment contribution
+
+Schwab cash -> MSFT $80
+= investment allocation only, not another household expense
+
+This double-count prevention is mandatory.
+
+DASHBOARD
+
+Add a small investment section to the current dashboard showing:
+- portfolio value
+- monthly contribution
+- gain/loss
+- $25K goal progress
+
+Add an Investments navigation item that opens a dedicated Investments page.
+
+INVESTMENTS PAGE
+
+Include:
+- summary cards
+- $25K goal progress
+- monthly allocation plan
+- holdings table
+- contributions/history
+- gain/loss
+- portfolio allocation
+
+MANUAL TRANSACTIONS
+
+Allow manual entries for:
+- deposit/contribution
+- withdrawal
+- buy
+- sell
+- dividend
+- dividend reinvestment
+- fee
+
+Calculate net contributions from:
+deposits - withdrawals
+
+Do not count dividends as contributions.
+
+DATA MODEL
+
+Create proper investment tables rather than embedding this into existing transaction records.
+
+Suggested:
+- investment_accounts
+- investment_securities
+- investment_holdings
+- investment_transactions
+- investment_goals
+- investment_target_allocations
+
+Follow the existing Drizzle/API/Zod/generated-client architecture.
+
+FUTURE SCHWAB SUPPORT
+
+Do not fake or build Schwab synchronization now.
+
+However, structure the implementation so manual data entry can later be replaced or supplemented by a provider adapter.
+
+For example:
+
+InvestmentProvider
+- getAccounts()
+- getHoldings()
+- getTransactions()
+- getPrices()
+
+Manual data should be the first provider/source.
+
+Do not redesign the rest of Ledger.
+
+Preserve all existing:
+- budgeting
+- CSV import
+- reconciliation
+- manual entry
+- exports
+- authentication
+- tenant separation
+
+Before coding:
+1. inspect current architecture
+2. identify all affected files
+3. give me a short implementation plan
+
+Then implement the complete feature.
+
+At completion:
+- run typecheck
+- run build
+- report all files changed
+- report migrations
+- explain how the $300 investment appears in Budget vs Actual
+- explain how double counting is prevented
