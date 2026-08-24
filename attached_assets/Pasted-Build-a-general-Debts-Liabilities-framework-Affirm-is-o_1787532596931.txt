@@ -1,0 +1,365 @@
+Build a general Debts & Liabilities framework. Affirm is one supported example, but the architecture must also handle credit cards, mortgages, auto loans, student loans, personal loans, medical debt, lines of credit, store financing, buy-now-pay-later providers, and other installment arrangements.
+
+Do not hard-code the data model, transaction matcher, calculations, or UI specifically for Affirm.
+
+Liability hierarchy
+
+Support a provider or lender containing one or more liability accounts:
+
+Provider: Affirm
+- Installment loan O2K0
+- Installment loan Z4N8
+
+Provider: Capital One
+- Credit card A0C8
+
+Provider: Auto Finance Company
+- Vehicle loan 1234
+
+Each liability account must have its own balance, terms, payments, activity history, and matching rules. Provider-level summaries may combine accounts, but individual balances must remain separate.
+
+Liability types
+
+Support at least:
+
+- Credit card / revolving credit
+- Installment loan
+- Buy-now-pay-later loan
+- Mortgage
+- Auto loan
+- Student loan
+- Personal loan
+- Medical debt
+- Home-equity loan or line of credit
+- Store financing
+- Tax debt
+- Other liability
+
+Use a type field and type-specific optional attributes. Avoid creating a different database table for every liability type.
+
+Core liability fields
+
+Each liability should support:
+
+- ID and authenticated user/household ownership
+- Provider or lender name
+- User-defined account name
+- Liability type
+- Masked account or loan identifier
+- Original creditor, when different from the current servicer
+- Description or purpose
+- Original balance or credit limit
+- Verified current balance
+- Balance-as-of date
+- APR or interest rate
+- Interest-rate type: fixed, variable, promotional, or unknown
+- Promotional rate expiration date
+- Minimum payment
+- User’s planned payment
+- Scheduled payment frequency
+- Due day or next due date
+- Start/open date
+- Original term
+- Expected payoff or maturity date
+- Priority
+- Status: Active, Paid Off, Paused, Closed, Delinquent, Disputed, or Archived
+- Notes
+- Created and updated timestamps
+
+Type-specific behavior
+
+Revolving credit:
+
+- Track credit limit, statement balance, current balance, available credit, utilization, minimum payment, statement date, due date, and purchases/charges.
+- New purchases increase the balance.
+- Payments reduce the balance.
+- Interest and fees increase the balance.
+- Do not assume a fixed payoff schedule.
+- Calculate payoff scenarios using minimum, planned, and recommended payments.
+
+Installment debt:
+
+- Track original principal, current principal, term, APR, scheduled payment, remaining payments, and maturity date.
+- Split payments into principal, interest, and fees when enough information is available.
+- Allow the user to enter the lender-reported principal balance when an exact split is unavailable.
+
+Buy-now-pay-later providers:
+
+- Support multiple simultaneous loans under one provider.
+- Match transactions to individual loans using masked identifiers when available.
+- Allow zero-interest and interest-bearing plans.
+- Track each loan’s payment schedule separately.
+
+Lines of credit:
+
+- Allow additional borrowing after account creation.
+- Track draws, payments, interest, and available credit.
+
+Mortgages and auto loans:
+
+- Support escrow or bundled amounts without incorrectly treating escrow as principal.
+- Let the user record principal, interest, fees, and escrow components when known.
+
+Liability activity ledger
+
+Maintain an auditable activity ledger for every liability:
+
+- Payment
+- Principal payment
+- Interest
+- Fee
+- New charge or purchase
+- Additional borrowing/draw
+- Refund or credit
+- Balance transfer
+- Adjustment
+- Write-off or forgiveness
+
+Do not derive the entire history by repeatedly overwriting a current-balance field.
+
+Balance reconciliation
+
+The lender’s statement or portal balance is authoritative when the user enters it.
+
+Require a balance-as-of date whenever a verified balance is entered. Calculate:
+
+calculated balance =
+verified balance
++ charges, borrowing, interest, and fees after the verification date
+- principal payments, refunds, and credits after the verification date
+
+Never apply a transaction dated on or before the balance-as-of date to that verified balance. This prevents historical payments from being deducted twice.
+
+Show:
+
+- Last verified balance
+- Last verified date
+- Calculated current balance
+- Unmatched activity
+- Difference requiring reconciliation
+- Last successful reconciliation date
+
+Allow users to make a dated balance adjustment without deleting historical activity.
+
+Transaction matching
+
+Create a flexible matching system rather than provider-specific conditional statements.
+
+A liability-matching rule may use:
+
+- Normalized merchant name
+- Original bank description
+- Description substring
+- Regular expression
+- Masked account or loan suffix
+- Transaction amount
+- Amount tolerance
+- Payment-date window
+- Source bank account
+- Bank-provided category
+- Direction/sign
+- Provider-specific parser
+
+Provider-specific parsers may extract useful identifiers, but all parsers must produce the same normalized result:
+
+- Provider
+- Candidate liability identifier
+- Activity type
+- Amount
+- Confidence score
+- Explanation of why it matched
+
+Example:
+
+AFFIRM.COM PAYME AFFIRM.COM ***********O2K0
+
+becomes:
+
+- Provider: Affirm
+- Identifier: O2K0
+- Activity: Payment
+- Amount: $48.36
+
+A credit-card payment such as:
+
+CAPITAL ONE CRCARDPMT ***********A0C8
+
+may become:
+
+- Provider: Capital One
+- Identifier: A0C8
+- Activity: Payment
+- Amount: $74.00
+
+Do not assume transactions sharing a provider belong to the same account.
+
+Matching workflow
+
+For each imported candidate:
+
+- Automatically link only high-confidence unambiguous matches.
+- Ask the user to confirm ambiguous matches.
+- Allow manual linking and unlinking.
+- Allow creation of a new liability from an unmatched transaction.
+- Allow the user to ignore a transaction.
+- Remember confirmed matching rules.
+- Never apply one household transaction to multiple liabilities unless the user explicitly splits it.
+- Never create a duplicate household expense when linking a payment.
+
+Show a guided import message such as:
+
+“We found payments that may belong to 12 liability accounts across Affirm and Capital One. Review and match them now.”
+
+Transfers and accounting treatment
+
+A debt payment is cash leaving a household account, so it affects household cash flow. However, for financial analysis distinguish:
+
+- Principal repayment: reduces a liability and is not consumption spending.
+- Interest and fees: true financing expenses.
+- New purchases or borrowing: increase the liability and should retain their actual spending categories.
+- Credit-card payment: generally a transfer that should not duplicate the original card purchases as expenses.
+
+Prevent double-counting credit-card purchases and the later credit-card payment. If card-level purchases were imported and categorized, treat the payment as a transfer/liability reduction. If only the payment is available, make the limitation explicit rather than inventing spending details.
+
+Calculations
+
+For every liability calculate:
+
+- Current balance
+- Principal repaid
+- Interest and fees paid
+- Scheduled monthly payment equivalent
+- Remaining number of payments
+- Estimated payoff date
+- Total projected interest
+- Payment progress
+- Utilization for revolving accounts
+- Amount past due, when known
+- Monthly payment that will be released after payoff
+- Alternative payoff scenarios
+- Effect of an additional monthly payment
+- Effect of a one-time payment
+
+Use standard amortization logic where applicable. Do not use installment-loan formulas for revolving accounts or accounts with unknown/variable terms.
+
+Strategies
+
+Support:
+
+- Debt avalanche: highest effective APR first
+- Debt snowball: lowest balance first
+- Highest required payment first
+- Earliest payoff first
+- Promotional-rate deadline
+- User-defined priority
+- Hybrid strategy
+
+The existing debtStrategy setting should control the default recommendation strategy, but users must be able to override priority for individual liabilities.
+
+Savings and investment recommendations
+
+Integrate liabilities with savings goals, investment goals, checking buffer, and monthly budget surplus.
+
+Recommendations should consider:
+
+- Required minimum debt payments
+- Delinquent or past-due accounts
+- Checking buffer
+- Emergency-savings target
+- APR and promotional expiration
+- Employer investment match, if entered
+- Goal deadlines
+- Available monthly surplus
+- Expected payoff dates
+- Payments that will soon be released
+
+Examples:
+
+- “Loan O2K0 is projected to finish in December, releasing $48.36 per month.”
+- “Three installment plans should finish by January, releasing $100.61 per month.”
+- “Redirecting the released payments to Emergency Savings would move its completion date forward by four months.”
+- “Capital One is at 82% utilization. Consider prioritizing it before increasing optional investments.”
+- “This 0% installment plan does not require accelerated repayment before its promotional deadline.”
+- “Your planned savings, investments, and extra debt payments exceed projected surplus by $140.”
+
+Recommendations are advisory only. Never change plan lines, transfer funds, or reallocate money without explicit user confirmation.
+
+Dashboard and UI
+
+Add a Debts & Liabilities navigation item with:
+
+- Total outstanding liabilities
+- Required monthly payments
+- Interest and fees paid
+- Revolving-credit utilization
+- Estimated debt-free date
+- Payments expected to be released soon
+- Accounts needing reconciliation
+- Accounts approaching promotional-rate expiration
+
+Provide:
+
+- Provider-grouped account cards
+- Individual liability detail pages
+- Activity history
+- Payment schedules
+- Balance reconciliation
+- Transaction matching
+- Payoff charts
+- Snowball/avalanche comparison
+- “What if” extra-payment calculator
+- Links back to associated household transactions
+
+Dashboard recommendations should summarize debt, savings, investments, and available surplus together without combining their accounting balances.
+
+API and database
+
+Implement normalized, authenticated entities for:
+
+- Liability providers
+- Liability accounts
+- Liability activities
+- Verified balance snapshots
+- Transaction-to-liability links
+- Matching rules
+- Optional payment schedules
+- Recommendation scenarios
+
+Follow the project’s existing Express, Drizzle, Zod, OpenAPI, and generated React Query client patterns. Enforce user/household ownership in every query and mutation.
+
+Store monetary values using the project’s established money convention; if no safe convention exists, use integer cents. Do not introduce additional floating-point money fields.
+
+Testing
+
+Test:
+
+- Multiple loans under one provider
+- Multiple credit cards under one issuer
+- Identifier extraction and matching
+- Ambiguous payments
+- Verified-balance cutoff dates
+- Duplicate-payment prevention
+- Revolving versus installment calculations
+- Credit-card payment double-counting prevention
+- Interest, fees, refunds, and new borrowing
+- 0% promotional expiration
+- Paid-off accounts and released cash flow
+- Snowball and avalanche ordering
+- Savings and investment reallocation recommendations
+- Ownership isolation
+- Editing or unlinking a matched transaction
+
+Acceptance criteria
+
+The feature is complete when:
+
+1. The user can track any common liability type.
+2. One provider can contain multiple separately tracked accounts or loans.
+3. Imported transactions can be safely matched to the correct liability.
+4. Credit-card payments do not duplicate categorized purchases.
+5. Verified balances reconcile without reapplying older payments.
+6. Installment and revolving debts use appropriate calculations.
+7. Payoff projections feed savings and investment recommendations.
+8. Recommendations remain advisory.
+9. Existing transaction, investment, budget, import, and reconciliation behavior continues to work.
+10. Type checking, automated tests, and production build pass.
