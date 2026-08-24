@@ -178,6 +178,41 @@ export const investmentTargetAllocationsTable = pgTable("investment_target_alloc
   monthlyAmount: doublePrecision("monthly_amount").notNull().default(0),
 });
 
+/**
+ * Savings goals are household cash plans, not investment positions. Amounts
+ * are stored as integer cents so goal progress and contribution history remain
+ * exact even after many edits.
+ */
+export const savingsGoalsTable = pgTable("savings_goals", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  targetAmountCents: integer("target_amount_cents").notNull(),
+  startingBalanceCents: integer("starting_balance_cents").notNull().default(0),
+  monthlyPlannedCents: integer("monthly_planned_cents"),
+  startDate: date("start_date", { mode: "string" }).notNull(),
+  targetDate: date("target_date", { mode: "string" }).notNull(),
+  priority: text("priority").notNull().default("Medium"),
+  status: text("status").notNull().default("active"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const savingsContributionsTable = pgTable("savings_contributions", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id")
+    .notNull()
+    .references(() => savingsGoalsTable.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  contributionDate: date("contribution_date", { mode: "string" }).notNull(),
+  entryType: text("entry_type").notNull().default("contribution"),
+  note: text("note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Settings = typeof settingsTable.$inferSelect;
 export type IncomeSource = typeof incomeSourcesTable.$inferSelect;
 export type Category = typeof categoriesTable.$inferSelect;
@@ -191,3 +226,5 @@ export type InvestmentHolding = typeof investmentHoldingsTable.$inferSelect;
 export type InvestmentTransaction = typeof investmentTransactionsTable.$inferSelect;
 export type InvestmentGoal = typeof investmentGoalsTable.$inferSelect;
 export type InvestmentTargetAllocation = typeof investmentTargetAllocationsTable.$inferSelect;
+export type SavingsGoal = typeof savingsGoalsTable.$inferSelect;
+export type SavingsContribution = typeof savingsContributionsTable.$inferSelect;

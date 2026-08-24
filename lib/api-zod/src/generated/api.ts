@@ -101,7 +101,7 @@ export const CreateIncomeResponse = zod.object({
  * @summary Update income source
  */
 export const UpdateIncomeParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 
@@ -131,7 +131,7 @@ export const UpdateIncomeResponse = zod.object({
  * @summary Delete income source
  */
 export const DeleteIncomeParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 export const DeleteIncomeResponse = zod.void()
@@ -173,7 +173,7 @@ export const CreateCategoryResponse = zod.object({
  * @summary Update category (rename or edit subcategory list)
  */
 export const UpdateCategoryParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 
@@ -197,7 +197,7 @@ export const UpdateCategoryResponse = zod.object({
  * @summary Delete category
  */
 export const DeleteCategoryParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 export const DeleteCategoryResponse = zod.void()
@@ -286,7 +286,7 @@ export const CopyPlanResponse = zod.array(CopyPlanResponseItem)
  * @summary Update budget plan line
  */
 export const UpdatePlanLineParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 
@@ -320,7 +320,7 @@ export const UpdatePlanLineResponse = zod.object({
  * @summary Delete budget plan line
  */
 export const DeletePlanLineParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 export const DeletePlanLineResponse = zod.void()
@@ -396,7 +396,7 @@ export const CreateTransactionResponse = zod.object({
  * @summary Categorize or edit a transaction; optionally save the choice as a rule
  */
 export const UpdateTransactionParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 export const UpdateTransactionBody = zod.object({
@@ -432,7 +432,7 @@ export const UpdateTransactionResponse = zod.object({
  * @summary Delete a transaction
  */
 export const DeleteTransactionParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 export const DeleteTransactionResponse = zod.void()
@@ -482,7 +482,7 @@ export const ListImportsResponse = zod.array(ListImportsResponseItem)
  * @summary Delete an import record (only when none of its transactions remain)
  */
 export const DeleteImportParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 export const DeleteImportResponse = zod.void()
@@ -1000,6 +1000,402 @@ export const SyncInvestmentContributionPlanResponse = zod.object({
 
 
 /**
+ * @summary Get household savings goals, contribution history, projections, and affordability
+ */
+export const GetSavingsOverviewResponse = zod.object({
+  "goals": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "targetAmount": zod.number(),
+  "startingBalance": zod.number(),
+  "monthlyPlannedContribution": zod.number().nullish(),
+  "startDate": zod.coerce.date(),
+  "targetDate": zod.coerce.date(),
+  "priority": zod.enum(['High', 'Medium', 'Low']),
+  "status": zod.enum(['active', 'paused', 'completed', 'archived']),
+  "notes": zod.string().nullish(),
+  "currentBalance": zod.number(),
+  "contributionsToDate": zod.number(),
+  "remainingAmount": zod.number(),
+  "percentComplete": zod.number(),
+  "timeProgressPercent": zod.number(),
+  "expectedBalance": zod.number(),
+  "variance": zod.number(),
+  "monthsRemaining": zod.number(),
+  "requiredMonthlyContribution": zod.number(),
+  "averageMonthlyContribution": zod.number(),
+  "projectedBalance": zod.number(),
+  "projectedCompletionDate": zod.coerce.date().nullish(),
+  "trajectoryStatus": zod.enum(['Ahead', 'On track', 'Slightly behind', 'Behind', 'Overdue', 'Completed', 'Insufficient history']),
+  "recommendation": zod.string(),
+  "trajectory": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "expected": zod.number(),
+  "actual": zod.number()
+})),
+  "contributions": zod.array(zod.object({
+  "id": zod.number(),
+  "goalId": zod.number(),
+  "amount": zod.number(),
+  "contributionDate": zod.coerce.date(),
+  "entryType": zod.enum(['contribution', 'adjustment']),
+  "note": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+})),
+  "summary": zod.object({
+  "activeGoalCount": zod.number(),
+  "totalCurrentBalance": zod.number(),
+  "totalTargetAmount": zod.number(),
+  "combinedMonthlyNeed": zod.number(),
+  "affordabilityStatus": zod.enum(['Within budget', 'Over budget', 'No budget data']),
+  "projectedMonthlySurplus": zod.number().nullable(),
+  "primaryGoal": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "targetAmount": zod.number(),
+  "startingBalance": zod.number(),
+  "monthlyPlannedContribution": zod.number().nullish(),
+  "startDate": zod.coerce.date(),
+  "targetDate": zod.coerce.date(),
+  "priority": zod.enum(['High', 'Medium', 'Low']),
+  "status": zod.enum(['active', 'paused', 'completed', 'archived']),
+  "notes": zod.string().nullish(),
+  "currentBalance": zod.number(),
+  "contributionsToDate": zod.number(),
+  "remainingAmount": zod.number(),
+  "percentComplete": zod.number(),
+  "timeProgressPercent": zod.number(),
+  "expectedBalance": zod.number(),
+  "variance": zod.number(),
+  "monthsRemaining": zod.number(),
+  "requiredMonthlyContribution": zod.number(),
+  "averageMonthlyContribution": zod.number(),
+  "projectedBalance": zod.number(),
+  "projectedCompletionDate": zod.coerce.date().nullish(),
+  "trajectoryStatus": zod.enum(['Ahead', 'On track', 'Slightly behind', 'Behind', 'Overdue', 'Completed', 'Insufficient history']),
+  "recommendation": zod.string(),
+  "trajectory": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "expected": zod.number(),
+  "actual": zod.number()
+})),
+  "contributions": zod.array(zod.object({
+  "id": zod.number(),
+  "goalId": zod.number(),
+  "amount": zod.number(),
+  "contributionDate": zod.coerce.date(),
+  "entryType": zod.enum(['contribution', 'adjustment']),
+  "note": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+}),zod.null()])
+})
+})
+
+
+/**
+ * @summary Create a household savings goal
+ */
+export const createSavingsGoalBodyNameMax = 120;
+
+export const createSavingsGoalBodyTargetAmountMin = 0.01;
+export const createSavingsGoalBodyTargetAmountMax = 21474836.47;
+
+export const createSavingsGoalBodyStartingBalanceMin = 0;
+export const createSavingsGoalBodyStartingBalanceMax = 21474836.47;
+
+export const createSavingsGoalBodyMonthlyPlannedContributionMin = 0;
+export const createSavingsGoalBodyMonthlyPlannedContributionMax = 21474836.47;
+
+export const createSavingsGoalBodyNotesMax = 1000;
+
+
+
+export const CreateSavingsGoalBody = zod.object({
+  "name": zod.string().min(1).max(createSavingsGoalBodyNameMax),
+  "targetAmount": zod.number().min(createSavingsGoalBodyTargetAmountMin).max(createSavingsGoalBodyTargetAmountMax),
+  "startingBalance": zod.number().min(createSavingsGoalBodyStartingBalanceMin).max(createSavingsGoalBodyStartingBalanceMax),
+  "monthlyPlannedContribution": zod.number().min(createSavingsGoalBodyMonthlyPlannedContributionMin).max(createSavingsGoalBodyMonthlyPlannedContributionMax).nullish(),
+  "startDate": zod.coerce.date(),
+  "targetDate": zod.coerce.date(),
+  "priority": zod.enum(['High', 'Medium', 'Low']),
+  "notes": zod.string().max(createSavingsGoalBodyNotesMax).nullish()
+})
+
+export const CreateSavingsGoalResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "targetAmount": zod.number(),
+  "startingBalance": zod.number(),
+  "monthlyPlannedContribution": zod.number().nullish(),
+  "startDate": zod.coerce.date(),
+  "targetDate": zod.coerce.date(),
+  "priority": zod.enum(['High', 'Medium', 'Low']),
+  "status": zod.enum(['active', 'paused', 'completed', 'archived']),
+  "notes": zod.string().nullish(),
+  "currentBalance": zod.number(),
+  "contributionsToDate": zod.number(),
+  "remainingAmount": zod.number(),
+  "percentComplete": zod.number(),
+  "timeProgressPercent": zod.number(),
+  "expectedBalance": zod.number(),
+  "variance": zod.number(),
+  "monthsRemaining": zod.number(),
+  "requiredMonthlyContribution": zod.number(),
+  "averageMonthlyContribution": zod.number(),
+  "projectedBalance": zod.number(),
+  "projectedCompletionDate": zod.coerce.date().nullish(),
+  "trajectoryStatus": zod.enum(['Ahead', 'On track', 'Slightly behind', 'Behind', 'Overdue', 'Completed', 'Insufficient history']),
+  "recommendation": zod.string(),
+  "trajectory": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "expected": zod.number(),
+  "actual": zod.number()
+})),
+  "contributions": zod.array(zod.object({
+  "id": zod.number(),
+  "goalId": zod.number(),
+  "amount": zod.number(),
+  "contributionDate": zod.coerce.date(),
+  "entryType": zod.enum(['contribution', 'adjustment']),
+  "note": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Get one household savings goal with its contribution history
+ */
+export const GetSavingsGoalParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetSavingsGoalResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "targetAmount": zod.number(),
+  "startingBalance": zod.number(),
+  "monthlyPlannedContribution": zod.number().nullish(),
+  "startDate": zod.coerce.date(),
+  "targetDate": zod.coerce.date(),
+  "priority": zod.enum(['High', 'Medium', 'Low']),
+  "status": zod.enum(['active', 'paused', 'completed', 'archived']),
+  "notes": zod.string().nullish(),
+  "currentBalance": zod.number(),
+  "contributionsToDate": zod.number(),
+  "remainingAmount": zod.number(),
+  "percentComplete": zod.number(),
+  "timeProgressPercent": zod.number(),
+  "expectedBalance": zod.number(),
+  "variance": zod.number(),
+  "monthsRemaining": zod.number(),
+  "requiredMonthlyContribution": zod.number(),
+  "averageMonthlyContribution": zod.number(),
+  "projectedBalance": zod.number(),
+  "projectedCompletionDate": zod.coerce.date().nullish(),
+  "trajectoryStatus": zod.enum(['Ahead', 'On track', 'Slightly behind', 'Behind', 'Overdue', 'Completed', 'Insufficient history']),
+  "recommendation": zod.string(),
+  "trajectory": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "expected": zod.number(),
+  "actual": zod.number()
+})),
+  "contributions": zod.array(zod.object({
+  "id": zod.number(),
+  "goalId": zod.number(),
+  "amount": zod.number(),
+  "contributionDate": zod.coerce.date(),
+  "entryType": zod.enum(['contribution', 'adjustment']),
+  "note": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Update a household savings goal or lifecycle status
+ */
+export const UpdateSavingsGoalParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const updateSavingsGoalBodyNameMax = 120;
+
+export const updateSavingsGoalBodyTargetAmountMin = 0.01;
+export const updateSavingsGoalBodyTargetAmountMax = 21474836.47;
+
+export const updateSavingsGoalBodyStartingBalanceMin = 0;
+export const updateSavingsGoalBodyStartingBalanceMax = 21474836.47;
+
+export const updateSavingsGoalBodyMonthlyPlannedContributionMin = 0;
+export const updateSavingsGoalBodyMonthlyPlannedContributionMax = 21474836.47;
+
+export const updateSavingsGoalBodyNotesMax = 1000;
+
+
+
+export const UpdateSavingsGoalBody = zod.object({
+  "name": zod.string().min(1).max(updateSavingsGoalBodyNameMax).optional(),
+  "targetAmount": zod.number().min(updateSavingsGoalBodyTargetAmountMin).max(updateSavingsGoalBodyTargetAmountMax).optional(),
+  "startingBalance": zod.number().min(updateSavingsGoalBodyStartingBalanceMin).max(updateSavingsGoalBodyStartingBalanceMax).optional(),
+  "monthlyPlannedContribution": zod.number().min(updateSavingsGoalBodyMonthlyPlannedContributionMin).max(updateSavingsGoalBodyMonthlyPlannedContributionMax).nullish(),
+  "startDate": zod.coerce.date().optional(),
+  "targetDate": zod.coerce.date().optional(),
+  "priority": zod.enum(['High', 'Medium', 'Low']).optional(),
+  "status": zod.enum(['active', 'paused', 'completed', 'archived']).optional(),
+  "notes": zod.string().max(updateSavingsGoalBodyNotesMax).nullish()
+})
+
+export const UpdateSavingsGoalResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "targetAmount": zod.number(),
+  "startingBalance": zod.number(),
+  "monthlyPlannedContribution": zod.number().nullish(),
+  "startDate": zod.coerce.date(),
+  "targetDate": zod.coerce.date(),
+  "priority": zod.enum(['High', 'Medium', 'Low']),
+  "status": zod.enum(['active', 'paused', 'completed', 'archived']),
+  "notes": zod.string().nullish(),
+  "currentBalance": zod.number(),
+  "contributionsToDate": zod.number(),
+  "remainingAmount": zod.number(),
+  "percentComplete": zod.number(),
+  "timeProgressPercent": zod.number(),
+  "expectedBalance": zod.number(),
+  "variance": zod.number(),
+  "monthsRemaining": zod.number(),
+  "requiredMonthlyContribution": zod.number(),
+  "averageMonthlyContribution": zod.number(),
+  "projectedBalance": zod.number(),
+  "projectedCompletionDate": zod.coerce.date().nullish(),
+  "trajectoryStatus": zod.enum(['Ahead', 'On track', 'Slightly behind', 'Behind', 'Overdue', 'Completed', 'Insufficient history']),
+  "recommendation": zod.string(),
+  "trajectory": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "expected": zod.number(),
+  "actual": zod.number()
+})),
+  "contributions": zod.array(zod.object({
+  "id": zod.number(),
+  "goalId": zod.number(),
+  "amount": zod.number(),
+  "contributionDate": zod.coerce.date(),
+  "entryType": zod.enum(['contribution', 'adjustment']),
+  "note": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Delete a household savings goal and its contribution history
+ */
+export const DeleteSavingsGoalParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteSavingsGoalResponse = zod.void()
+
+
+/**
+ * @summary List auditable contribution history for a savings goal
+ */
+export const ListSavingsContributionsParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const ListSavingsContributionsResponseItem = zod.object({
+  "id": zod.number(),
+  "goalId": zod.number(),
+  "amount": zod.number(),
+  "contributionDate": zod.coerce.date(),
+  "entryType": zod.enum(['contribution', 'adjustment']),
+  "note": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListSavingsContributionsResponse = zod.array(ListSavingsContributionsResponseItem)
+
+
+/**
+ * @summary Add a contribution or balance adjustment to a savings goal
+ */
+export const CreateSavingsContributionParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const createSavingsContributionBodyAmountMin = -10000000;
+export const createSavingsContributionBodyAmountMax = 10000000;
+
+export const createSavingsContributionBodyNoteMax = 500;
+
+
+
+export const CreateSavingsContributionBody = zod.object({
+  "amount": zod.number().min(createSavingsContributionBodyAmountMin).max(createSavingsContributionBodyAmountMax),
+  "contributionDate": zod.coerce.date(),
+  "entryType": zod.enum(['contribution', 'adjustment']).optional(),
+  "note": zod.string().max(createSavingsContributionBodyNoteMax).nullish()
+})
+
+export const CreateSavingsContributionResponse = zod.object({
+  "id": zod.number(),
+  "goalId": zod.number(),
+  "amount": zod.number(),
+  "contributionDate": zod.coerce.date(),
+  "entryType": zod.enum(['contribution', 'adjustment']),
+  "note": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update a savings contribution or adjustment
+ */
+export const UpdateSavingsContributionParams = zod.object({
+  "id": zod.coerce.number().int(),
+  "contributionId": zod.coerce.number().int()
+})
+
+export const updateSavingsContributionBodyAmountMin = -10000000;
+export const updateSavingsContributionBodyAmountMax = 10000000;
+
+export const updateSavingsContributionBodyNoteMax = 500;
+
+
+
+export const UpdateSavingsContributionBody = zod.object({
+  "amount": zod.number().min(updateSavingsContributionBodyAmountMin).max(updateSavingsContributionBodyAmountMax).optional(),
+  "contributionDate": zod.coerce.date().optional(),
+  "entryType": zod.enum(['contribution', 'adjustment']).optional(),
+  "note": zod.string().max(updateSavingsContributionBodyNoteMax).nullish()
+})
+
+export const UpdateSavingsContributionResponse = zod.object({
+  "id": zod.number(),
+  "goalId": zod.number(),
+  "amount": zod.number(),
+  "contributionDate": zod.coerce.date(),
+  "entryType": zod.enum(['contribution', 'adjustment']),
+  "note": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a savings contribution or adjustment
+ */
+export const DeleteSavingsContributionParams = zod.object({
+  "id": zod.coerce.number().int(),
+  "contributionId": zod.coerce.number().int()
+})
+
+export const DeleteSavingsContributionResponse = zod.void()
+
+
+/**
  * @summary Dashboard summary for a budget month
  */
 export const GetDashboardQueryParams = zod.object({
@@ -1028,6 +1424,54 @@ export const GetDashboardResponse = zod.object({
   "netContributions": zod.number(),
   "investmentGrowth": zod.number(),
   "goalProgress": zod.number()
+}),
+  "savings": zod.object({
+  "activeGoalCount": zod.number(),
+  "totalCurrentBalance": zod.number(),
+  "totalTargetAmount": zod.number(),
+  "combinedMonthlyNeed": zod.number(),
+  "affordabilityStatus": zod.enum(['Within budget', 'Over budget', 'No budget data']),
+  "projectedMonthlySurplus": zod.number().nullable(),
+  "primaryGoal": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "targetAmount": zod.number(),
+  "startingBalance": zod.number(),
+  "monthlyPlannedContribution": zod.number().nullish(),
+  "startDate": zod.coerce.date(),
+  "targetDate": zod.coerce.date(),
+  "priority": zod.enum(['High', 'Medium', 'Low']),
+  "status": zod.enum(['active', 'paused', 'completed', 'archived']),
+  "notes": zod.string().nullish(),
+  "currentBalance": zod.number(),
+  "contributionsToDate": zod.number(),
+  "remainingAmount": zod.number(),
+  "percentComplete": zod.number(),
+  "timeProgressPercent": zod.number(),
+  "expectedBalance": zod.number(),
+  "variance": zod.number(),
+  "monthsRemaining": zod.number(),
+  "requiredMonthlyContribution": zod.number(),
+  "averageMonthlyContribution": zod.number(),
+  "projectedBalance": zod.number(),
+  "projectedCompletionDate": zod.coerce.date().nullish(),
+  "trajectoryStatus": zod.enum(['Ahead', 'On track', 'Slightly behind', 'Behind', 'Overdue', 'Completed', 'Insufficient history']),
+  "recommendation": zod.string(),
+  "trajectory": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "expected": zod.number(),
+  "actual": zod.number()
+})),
+  "contributions": zod.array(zod.object({
+  "id": zod.number(),
+  "goalId": zod.number(),
+  "amount": zod.number(),
+  "contributionDate": zod.coerce.date(),
+  "entryType": zod.enum(['contribution', 'adjustment']),
+  "note": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+}),zod.null()])
 })
 })
 

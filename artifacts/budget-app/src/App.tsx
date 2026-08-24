@@ -23,6 +23,7 @@ import BudgetPlan from "@/pages/plan";
 import Reconciliation from "@/pages/reconciliation";
 import Settings from "@/pages/settings";
 import Investments from "@/pages/investments";
+import Savings from "@/pages/savings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -141,6 +142,7 @@ function PrivateRouter() {
           <Route path="/transactions" component={Transactions} />
           <Route path="/plan" component={BudgetPlan} />
           <Route path="/reconciliation" component={Reconciliation} />
+          <Route path="/savings" component={Savings} />
           <Route path="/investments" component={Investments} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />

@@ -2,3 +2,4 @@
 - [Tenant category uniqueness](tenant-category-uniqueness.md) — legacy categories may retain a global unique key even after user scoping; remove it before enforcing a per-user index.
 - [Investment budget boundary](investment-budget-boundary.md) — household contributions use one linked ledger row; trades and other brokerage activity never enter Budget vs Actual.
 - [Reconciliation semantics](reconciliation-semantics.md) — source matching and budget-plan variance are separate accounting signals.
+- [OpenAPI generation workflow](openapi-generation-workflow.md) — regenerated clients briefly vanish; restart Vite before treating HMR import errors as real.

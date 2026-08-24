@@ -7,6 +7,7 @@
  */
 import type { CategoryActual } from './categoryActual';
 import type { InvestmentSummary } from './investmentSummary';
+import type { SavingsSummary } from './savingsSummary';
 
 export interface DashboardSummary {
   month: string;
@@ -20,4 +21,5 @@ export interface DashboardSummary {
   pendingCount: number;
   byCategory: CategoryActual[];
   investment: InvestmentSummary;
+  savings: SavingsSummary;
 }

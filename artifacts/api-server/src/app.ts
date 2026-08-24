@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
@@ -10,8 +10,12 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
+import { apiSecurityHeaders } from "./middlewares/apiSafety";
 
 const app: Express = express();
+
+app.disable("x-powered-by");
+app.use(apiSecurityHeaders);
 
 app.use(
   pinoHttp({
@@ -37,7 +41,7 @@ app.use(
 app.use(cors({ origin: false }));
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 app.use(
   clerkMiddleware((req) => ({
     publishableKey: publishableKeyFromHost(
@@ -48,5 +52,13 @@ app.use(
 );
 
 app.use("/api", router);
+app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  const status = typeof error === "object" && error && "status" in error ? Number(error.status) : 500;
+  if (status === 413) {
+    res.status(413).json({ error: "Request is too large." });
+    return;
+  }
+  res.status(500).json({ error: "Unexpected server error." });
+});
 
 export default app;

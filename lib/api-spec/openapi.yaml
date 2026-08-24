@@ -20,6 +20,7 @@ tags:
   - name: reconciliation
   - name: export
   - name: investments
+  - name: savings
 paths:
   /healthz:
     get:
@@ -116,7 +117,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       requestBody:
         required: true
         content:
@@ -144,7 +145,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       responses:
         "204":
           description: Deleted
@@ -194,7 +195,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       requestBody:
         required: true
         content:
@@ -222,7 +223,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       responses:
         "204":
           description: Deleted
@@ -309,7 +310,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       requestBody:
         required: true
         content:
@@ -337,7 +338,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       responses:
         "204":
           description: Deleted
@@ -400,7 +401,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       requestBody:
         required: true
         content:
@@ -428,7 +429,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       responses:
         "204":
           description: Deleted
@@ -485,7 +486,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       responses:
         "204":
           description: Deleted
@@ -835,6 +836,176 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvestmentPlanSyncResult"
+  /savings:
+    get:
+      operationId: getSavingsOverview
+      tags: [savings]
+      summary: Get household savings goals, contribution history, projections, and affordability
+      responses:
+        "200":
+          description: Savings workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavingsOverview"
+  /savings/goals:
+    post:
+      operationId: createSavingsGoal
+      tags: [savings]
+      summary: Create a household savings goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavingsGoalInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavingsGoal"
+  /savings/goals/{id}:
+    get:
+      operationId: getSavingsGoal
+      tags: [savings]
+      summary: Get one household savings goal with its contribution history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Savings goal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavingsGoal"
+        "404": { description: Not found }
+    patch:
+      operationId: updateSavingsGoal
+      tags: [savings]
+      summary: Update a household savings goal or lifecycle status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavingsGoalUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavingsGoal"
+        "404": { description: Not found }
+    delete:
+      operationId: deleteSavingsGoal
+      tags: [savings]
+      summary: Delete a household savings goal and its contribution history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204": { description: Deleted }
+        "404": { description: Not found }
+  /savings/goals/{id}/contributions:
+    get:
+      operationId: listSavingsContributions
+      tags: [savings]
+      summary: List auditable contribution history for a savings goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Contribution history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavingsContribution"
+        "404": { description: Not found }
+    post:
+      operationId: createSavingsContribution
+      tags: [savings]
+      summary: Add a contribution or balance adjustment to a savings goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavingsContributionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavingsContribution"
+        "404": { description: Not found }
+  /savings/goals/{id}/contributions/{contributionId}:
+    patch:
+      operationId: updateSavingsContribution
+      tags: [savings]
+      summary: Update a savings contribution or adjustment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: contributionId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavingsContributionUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavingsContribution"
+        "404": { description: Not found }
+    delete:
+      operationId: deleteSavingsContribution
+      tags: [savings]
+      summary: Delete a savings contribution or adjustment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: contributionId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204": { description: Deleted }
+        "404": { description: Not found }
   /dashboard:
     get:
       operationId: getDashboard
@@ -1292,6 +1463,123 @@ components:
       required: [message]
       properties:
         message: { type: string }
+    SavingsContribution:
+      type: object
+      required: [id, goalId, amount, contributionDate, entryType, createdAt]
+      properties:
+        id: { type: number }
+        goalId: { type: number }
+        amount: { type: number }
+        contributionDate: { type: string, format: date }
+        entryType: { type: string, enum: [contribution, adjustment] }
+        note: { type: ["string", "null"] }
+        createdAt: { type: string }
+    SavingsContributionInput:
+      type: object
+      required: [amount, contributionDate]
+      properties:
+        amount: { type: number, minimum: -10000000, maximum: 10000000 }
+        contributionDate: { type: string, format: date }
+        entryType: { type: string, enum: [contribution, adjustment] }
+        note: { type: ["string", "null"], maxLength: 500 }
+    SavingsContributionUpdate:
+      type: object
+      properties:
+        amount: { type: number, minimum: -10000000, maximum: 10000000 }
+        contributionDate: { type: string, format: date }
+        entryType: { type: string, enum: [contribution, adjustment] }
+        note: { type: ["string", "null"], maxLength: 500 }
+    SavingsTrajectoryPoint:
+      type: object
+      required: [date, expected, actual]
+      properties:
+        date: { type: string, format: date }
+        expected: { type: number }
+        actual: { type: number }
+    SavingsGoal:
+      type: object
+      required: [id, name, targetAmount, startingBalance, startDate, targetDate, priority, status, currentBalance, contributionsToDate, remainingAmount, percentComplete, timeProgressPercent, expectedBalance, variance, monthsRemaining, requiredMonthlyContribution, averageMonthlyContribution, projectedBalance, trajectoryStatus, recommendation, trajectory, contributions]
+      properties:
+        id: { type: number }
+        name: { type: string }
+        targetAmount: { type: number }
+        startingBalance: { type: number }
+        monthlyPlannedContribution: { type: ["number", "null"] }
+        startDate: { type: string, format: date }
+        targetDate: { type: string, format: date }
+        priority: { type: string, enum: [High, Medium, Low] }
+        status: { type: string, enum: [active, paused, completed, archived] }
+        notes: { type: ["string", "null"] }
+        currentBalance: { type: number }
+        contributionsToDate: { type: number }
+        remainingAmount: { type: number }
+        percentComplete: { type: number }
+        timeProgressPercent: { type: number }
+        expectedBalance: { type: number }
+        variance: { type: number }
+        monthsRemaining: { type: number }
+        requiredMonthlyContribution: { type: number }
+        averageMonthlyContribution: { type: number }
+        projectedBalance: { type: number }
+        projectedCompletionDate: { type: ["string", "null"], format: date }
+        trajectoryStatus: { type: string, enum: [Ahead, On track, Slightly behind, Behind, Overdue, Completed, Insufficient history] }
+        recommendation: { type: string }
+        trajectory:
+          type: array
+          items:
+            $ref: "#/components/schemas/SavingsTrajectoryPoint"
+        contributions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SavingsContribution"
+    SavingsGoalInput:
+      type: object
+      required: [name, targetAmount, startingBalance, startDate, targetDate, priority]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        targetAmount: { type: number, minimum: 0.01, maximum: 21474836.47 }
+        startingBalance: { type: number, minimum: 0, maximum: 21474836.47 }
+        monthlyPlannedContribution: { type: ["number", "null"], minimum: 0, maximum: 21474836.47 }
+        startDate: { type: string, format: date }
+        targetDate: { type: string, format: date }
+        priority: { type: string, enum: [High, Medium, Low] }
+        notes: { type: ["string", "null"], maxLength: 1000 }
+    SavingsGoalUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        targetAmount: { type: number, minimum: 0.01, maximum: 21474836.47 }
+        startingBalance: { type: number, minimum: 0, maximum: 21474836.47 }
+        monthlyPlannedContribution: { type: ["number", "null"], minimum: 0, maximum: 21474836.47 }
+        startDate: { type: string, format: date }
+        targetDate: { type: string, format: date }
+        priority: { type: string, enum: [High, Medium, Low] }
+        status: { type: string, enum: [active, paused, completed, archived] }
+        notes: { type: ["string", "null"], maxLength: 1000 }
+    SavingsSummary:
+      type: object
+      required: [activeGoalCount, totalCurrentBalance, totalTargetAmount, combinedMonthlyNeed, affordabilityStatus, projectedMonthlySurplus, primaryGoal]
+      properties:
+        activeGoalCount: { type: number }
+        totalCurrentBalance: { type: number }
+        totalTargetAmount: { type: number }
+        combinedMonthlyNeed: { type: number }
+        affordabilityStatus: { type: string, enum: [Within budget, Over budget, No budget data] }
+        projectedMonthlySurplus: { type: ["number", "null"] }
+        primaryGoal:
+          oneOf:
+            - $ref: "#/components/schemas/SavingsGoal"
+            - type: "null"
+    SavingsOverview:
+      type: object
+      required: [goals, summary]
+      properties:
+        goals:
+          type: array
+          items:
+            $ref: "#/components/schemas/SavingsGoal"
+        summary:
+          $ref: "#/components/schemas/SavingsSummary"
     CategoryActual:
       type: object
       required: [category, planned, actual, remaining]
@@ -1302,7 +1590,7 @@ components:
         remaining: { type: number }
     DashboardSummary:
       type: object
-      required: [month, incomePlanned, incomeActual, plannedExpenses, actualExpenses, remaining, cashFlow, reviewCount, pendingCount, byCategory, investment]
+      required: [month, incomePlanned, incomeActual, plannedExpenses, actualExpenses, remaining, cashFlow, reviewCount, pendingCount, byCategory, investment, savings]
       properties:
         month: { type: string }
         incomePlanned: { type: number }
@@ -1319,6 +1607,8 @@ components:
             $ref: "#/components/schemas/CategoryActual"
         investment:
           $ref: "#/components/schemas/InvestmentSummary"
+        savings:
+          $ref: "#/components/schemas/SavingsSummary"
     ReconciliationRow:
       type: object
       required: [category, planned, manualTotal, bankTotal, difference, budgetVariance, budgetStatus, status]

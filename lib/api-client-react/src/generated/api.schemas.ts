@@ -505,6 +505,259 @@ export interface InvestmentPlanSyncResult {
   message: string;
 }
 
+export type SavingsContributionEntryType = typeof SavingsContributionEntryType[keyof typeof SavingsContributionEntryType];
+
+
+export const SavingsContributionEntryType = {
+  contribution: 'contribution',
+  adjustment: 'adjustment',
+} as const;
+
+export interface SavingsContribution {
+  id: number;
+  goalId: number;
+  amount: number;
+  contributionDate: string;
+  entryType: SavingsContributionEntryType;
+  /** @nullable */
+  note?: string | null;
+  createdAt: string;
+}
+
+export type SavingsContributionInputEntryType = typeof SavingsContributionInputEntryType[keyof typeof SavingsContributionInputEntryType];
+
+
+export const SavingsContributionInputEntryType = {
+  contribution: 'contribution',
+  adjustment: 'adjustment',
+} as const;
+
+export interface SavingsContributionInput {
+  /**
+     * @minimum -10000000
+     * @maximum 10000000
+     */
+  amount: number;
+  contributionDate: string;
+  entryType?: SavingsContributionInputEntryType;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  note?: string | null;
+}
+
+export type SavingsContributionUpdateEntryType = typeof SavingsContributionUpdateEntryType[keyof typeof SavingsContributionUpdateEntryType];
+
+
+export const SavingsContributionUpdateEntryType = {
+  contribution: 'contribution',
+  adjustment: 'adjustment',
+} as const;
+
+export interface SavingsContributionUpdate {
+  /**
+     * @minimum -10000000
+     * @maximum 10000000
+     */
+  amount?: number;
+  contributionDate?: string;
+  entryType?: SavingsContributionUpdateEntryType;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  note?: string | null;
+}
+
+export interface SavingsTrajectoryPoint {
+  date: string;
+  expected: number;
+  actual: number;
+}
+
+export type SavingsGoalPriority = typeof SavingsGoalPriority[keyof typeof SavingsGoalPriority];
+
+
+export const SavingsGoalPriority = {
+  High: 'High',
+  Medium: 'Medium',
+  Low: 'Low',
+} as const;
+
+export type SavingsGoalStatus = typeof SavingsGoalStatus[keyof typeof SavingsGoalStatus];
+
+
+export const SavingsGoalStatus = {
+  active: 'active',
+  paused: 'paused',
+  completed: 'completed',
+  archived: 'archived',
+} as const;
+
+export type SavingsGoalTrajectoryStatus = typeof SavingsGoalTrajectoryStatus[keyof typeof SavingsGoalTrajectoryStatus];
+
+
+export const SavingsGoalTrajectoryStatus = {
+  Ahead: 'Ahead',
+  On_track: 'On track',
+  Slightly_behind: 'Slightly behind',
+  Behind: 'Behind',
+  Overdue: 'Overdue',
+  Completed: 'Completed',
+  Insufficient_history: 'Insufficient history',
+} as const;
+
+export interface SavingsGoal {
+  id: number;
+  name: string;
+  targetAmount: number;
+  startingBalance: number;
+  /** @nullable */
+  monthlyPlannedContribution?: number | null;
+  startDate: string;
+  targetDate: string;
+  priority: SavingsGoalPriority;
+  status: SavingsGoalStatus;
+  /** @nullable */
+  notes?: string | null;
+  currentBalance: number;
+  contributionsToDate: number;
+  remainingAmount: number;
+  percentComplete: number;
+  timeProgressPercent: number;
+  expectedBalance: number;
+  variance: number;
+  monthsRemaining: number;
+  requiredMonthlyContribution: number;
+  averageMonthlyContribution: number;
+  projectedBalance: number;
+  /** @nullable */
+  projectedCompletionDate?: string | null;
+  trajectoryStatus: SavingsGoalTrajectoryStatus;
+  recommendation: string;
+  trajectory: SavingsTrajectoryPoint[];
+  contributions: SavingsContribution[];
+}
+
+export type SavingsGoalInputPriority = typeof SavingsGoalInputPriority[keyof typeof SavingsGoalInputPriority];
+
+
+export const SavingsGoalInputPriority = {
+  High: 'High',
+  Medium: 'Medium',
+  Low: 'Low',
+} as const;
+
+export interface SavingsGoalInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  /**
+     * @minimum 0.01
+     * @maximum 21474836.47
+     */
+  targetAmount: number;
+  /**
+     * @minimum 0
+     * @maximum 21474836.47
+     */
+  startingBalance: number;
+  /**
+     * @minimum 0
+     * @maximum 21474836.47
+     * @nullable
+     */
+  monthlyPlannedContribution?: number | null;
+  startDate: string;
+  targetDate: string;
+  priority: SavingsGoalInputPriority;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  notes?: string | null;
+}
+
+export type SavingsGoalUpdatePriority = typeof SavingsGoalUpdatePriority[keyof typeof SavingsGoalUpdatePriority];
+
+
+export const SavingsGoalUpdatePriority = {
+  High: 'High',
+  Medium: 'Medium',
+  Low: 'Low',
+} as const;
+
+export type SavingsGoalUpdateStatus = typeof SavingsGoalUpdateStatus[keyof typeof SavingsGoalUpdateStatus];
+
+
+export const SavingsGoalUpdateStatus = {
+  active: 'active',
+  paused: 'paused',
+  completed: 'completed',
+  archived: 'archived',
+} as const;
+
+export interface SavingsGoalUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name?: string;
+  /**
+     * @minimum 0.01
+     * @maximum 21474836.47
+     */
+  targetAmount?: number;
+  /**
+     * @minimum 0
+     * @maximum 21474836.47
+     */
+  startingBalance?: number;
+  /**
+     * @minimum 0
+     * @maximum 21474836.47
+     * @nullable
+     */
+  monthlyPlannedContribution?: number | null;
+  startDate?: string;
+  targetDate?: string;
+  priority?: SavingsGoalUpdatePriority;
+  status?: SavingsGoalUpdateStatus;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  notes?: string | null;
+}
+
+export type SavingsSummaryAffordabilityStatus = typeof SavingsSummaryAffordabilityStatus[keyof typeof SavingsSummaryAffordabilityStatus];
+
+
+export const SavingsSummaryAffordabilityStatus = {
+  Within_budget: 'Within budget',
+  Over_budget: 'Over budget',
+  No_budget_data: 'No budget data',
+} as const;
+
+export interface SavingsSummary {
+  activeGoalCount: number;
+  totalCurrentBalance: number;
+  totalTargetAmount: number;
+  combinedMonthlyNeed: number;
+  affordabilityStatus: SavingsSummaryAffordabilityStatus;
+  /** @nullable */
+  projectedMonthlySurplus: number | null;
+  primaryGoal: SavingsGoal | null;
+}
+
+export interface SavingsOverview {
+  goals: SavingsGoal[];
+  summary: SavingsSummary;
+}
+
 export interface CategoryActual {
   category: string;
   planned: number;
@@ -524,6 +777,7 @@ export interface DashboardSummary {
   pendingCount: number;
   byCategory: CategoryActual[];
   investment: InvestmentSummary;
+  savings: SavingsSummary;
 }
 
 export interface ReconciliationRow {

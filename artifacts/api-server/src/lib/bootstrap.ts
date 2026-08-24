@@ -184,6 +184,32 @@ async function ensureSchema(): Promise<void> {
       "security_id" integer NOT NULL,
       "monthly_amount" double precision NOT NULL DEFAULT 0
     );
+    CREATE TABLE IF NOT EXISTS "savings_goals" (
+      "id" serial PRIMARY KEY,
+      "user_id" text NOT NULL,
+      "name" text NOT NULL,
+      "target_amount_cents" integer NOT NULL,
+      "starting_balance_cents" integer NOT NULL DEFAULT 0,
+      "monthly_planned_cents" integer,
+      "start_date" date NOT NULL,
+      "target_date" date NOT NULL,
+      "priority" text NOT NULL DEFAULT 'Medium',
+      "status" text NOT NULL DEFAULT 'active',
+      "notes" text,
+      "created_at" timestamp with time zone NOT NULL DEFAULT now(),
+      "updated_at" timestamp with time zone NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS "savings_contributions" (
+      "id" serial PRIMARY KEY,
+      "goal_id" integer NOT NULL REFERENCES "savings_goals"("id") ON DELETE CASCADE,
+      "user_id" text NOT NULL,
+      "amount_cents" integer NOT NULL,
+      "contribution_date" date NOT NULL,
+      "entry_type" text NOT NULL DEFAULT 'contribution',
+      "note" text,
+      "created_at" timestamp with time zone NOT NULL DEFAULT now(),
+      "updated_at" timestamp with time zone NOT NULL DEFAULT now()
+    );
     ALTER TABLE "settings" ADD COLUMN IF NOT EXISTS "user_id" text;
     ALTER TABLE "income_sources" ADD COLUMN IF NOT EXISTS "user_id" text;
     ALTER TABLE "categories" ADD COLUMN IF NOT EXISTS "user_id" text;
@@ -209,6 +235,9 @@ async function ensureSchema(): Promise<void> {
     CREATE INDEX IF NOT EXISTS "investment_transactions_user_month_idx" ON "investment_transactions" ("user_id", "month");
     CREATE INDEX IF NOT EXISTS "investment_goals_user_id_idx" ON "investment_goals" ("user_id");
     CREATE INDEX IF NOT EXISTS "investment_allocations_user_id_idx" ON "investment_target_allocations" ("user_id");
+    CREATE INDEX IF NOT EXISTS "savings_goals_user_status_idx" ON "savings_goals" ("user_id", "status");
+    CREATE INDEX IF NOT EXISTS "savings_contributions_goal_date_idx" ON "savings_contributions" ("goal_id", "contribution_date");
+    CREATE INDEX IF NOT EXISTS "savings_contributions_user_id_idx" ON "savings_contributions" ("user_id");
   `);
 }
 

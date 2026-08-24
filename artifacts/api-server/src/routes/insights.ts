@@ -16,6 +16,7 @@ import { norm } from "../lib/budget";
 import { getOrCreateSettings } from "./budget";
 import { currentUserId } from "../middlewares/requireUser";
 import { getInvestmentOverviewForUser } from "./investments";
+import { getSavingsOverviewForUser } from "./savings";
 
 const router: IRouter = Router();
 
@@ -91,6 +92,10 @@ router.get("/dashboard", async (req, res): Promise<void> => {
   // reflected in the imported/entered data so the dashboard stays meaningful.
   const incomePlanned =
     incomes.length === 0 ? incomeActual : plannedFromSources;
+  const savingsOverview = await getSavingsOverviewForUser(
+    userId,
+    incomePlanned - plannedExpenses,
+  );
 
   res.json(
     GetDashboardResponse.parse({
@@ -105,6 +110,7 @@ router.get("/dashboard", async (req, res): Promise<void> => {
       pendingCount,
       byCategory,
       investment: investmentOverview.overview.summary,
+      savings: savingsOverview.summary,
     }),
   );
 });

@@ -1,5 +1,6 @@
 import { useGetDashboard, useGetSettings, getGetDashboardQueryKey } from "@workspace/api-client-react";
 import { formatCurrency, PageHeader, Skeleton, Card, CardContent, CardHeader, CardTitle } from "@/components/ui/core";
+import { Link } from "wouter";
 import { 
   ArrowUpRight, 
   ArrowDownRight, 
@@ -93,6 +94,38 @@ export default function Dashboard() {
           delay="300"
         />
       </div>
+
+      {/* Savings Snapshot */}
+      {dashboard.savings && (
+        <div className="glass-panel rounded-2xl border border-chart-2/30 p-5 sm:p-6 shadow-[0_8px_32px_0_rgba(46,204,113,0.1)]">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.18em] text-chart-2">Savings Goals</p>
+              <h2 className="font-display text-xl font-bold text-white mt-1">Progress & Planning</h2>
+            </div>
+            <Link href="/savings" className="text-sm font-semibold text-chart-2 hover:text-white transition-colors">Manage Goals →</Link>
+          </div>
+          {dashboard.savings.activeGoalCount > 0 ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <InvestmentMetric label="Total saved" value={formatCurrency(dashboard.savings.totalCurrentBalance)} positive={true} />
+              <InvestmentMetric label="Monthly need" value={formatCurrency(dashboard.savings.combinedMonthlyNeed)} />
+              <InvestmentMetric label="Affordability" value={dashboard.savings.affordabilityStatus.replace(/_/g, ' ')} positive={dashboard.savings.affordabilityStatus === 'Within budget'} />
+              {dashboard.savings.primaryGoal ? (
+                <InvestmentMetric label="Primary goal" value={`${dashboard.savings.primaryGoal.percentComplete.toFixed(1)}%`} />
+              ) : (
+                <InvestmentMetric label="Active goals" value={dashboard.savings.activeGoalCount.toString()} />
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-white/20 p-6 flex flex-col items-center justify-center text-center bg-black/20">
+              <PiggyBank className="text-white/30 mb-3" size={32} />
+              <h3 className="text-white font-bold font-display">No active savings goals</h3>
+              <p className="text-white/50 text-sm mt-1 mb-4 max-w-sm">Create a goal to start tracking progress for emergencies, travel, or big purchases.</p>
+              <Link href="/savings" className="text-sm font-bold text-black bg-chart-2 px-4 py-2 rounded-xl hover:bg-chart-2/90 transition-colors shadow-[0_0_15px_rgba(46,204,113,0.4)]">Create your first goal</Link>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Investment snapshot intentionally stays separate from household cash
           flow. Deposits/withdrawals are included in Budget vs Actual below;
